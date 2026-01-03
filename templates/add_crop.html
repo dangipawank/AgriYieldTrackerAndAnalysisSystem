@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add Master Crop</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Add Master Crop</h1>
+
+    <form method="POST" action="{{ url_for('main.add_crop_master') }}">
+      <label for="crop_name">Crop Name:</label>
+      <input
+        type="text"
+        id="crop_name"
+        name="crop_name"
+        placeholder="Enter crop name"
+        required
+      />
+      <br /><br />
+
+      <label for="croptype">Crop Type:</label>
+      <select id="croptype" name="croptype_id" required>
+        <option value="">-- Select Crop Type --</option>
+        {% for ct in crop_types %}
+        <option value="{{ ct.croptypeid }}">{{ ct.croptypename }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <button type="submit">Add Crop</button>
+    </form>
+
+    <br />
+    <a href="{{ url_for('main.list_crop_master') }}">View All Master Crops</a>
+  </body>
+</html>

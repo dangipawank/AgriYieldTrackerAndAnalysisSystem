@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add Yield Record</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <h1>Add Yield Record</h1>
+
+    <form method="POST">
+      <label for="crop_id">Crop:</label>
+      <select name="crop_id" id="crop_id" required>
+        <option value="">Select Crop</option>
+        {% for crop in crops %}
+        <option value="{{ crop.CropId }}">{{ crop.CropName }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="season_id">Season:</label>
+      <select id="season_id" name="season_id" required>
+        <option value="">Select Season</option>
+        {% for s in seasons %}
+        <option value="{{ s.seasonid }}">{{ s.seasonname }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="district_id">District:</label>
+      <select id="district_id" name="district_id" required>
+        <option value="">Select District</option>
+        {% for d in districts %}
+        <option value="{{ d.districtid }}">{{ d.districtname }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="municipality_id">Municipality:</label>
+      <select id="municipality_id" name="municipality_id" required disabled>
+        <option value="">Select Municipality</option>
+        {% for m in municipalities %}
+        <option
+          value="{{ m.municipalityid }}"
+          data-district="{{ m.districtid }}"
+        >
+          {{ m.municipalityname }}
+        </option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="year">Year:</label>
+      <input type="number" id="year" name="year" placeholder="Year" required />
+      <br /><br />
+
+      <label for="area_harvested">Area Harvested (ha):</label>
+      <input
+        type="number"
+        step="0.01"
+        id="area_harvested"
+        name="area_harvested"
+        placeholder="Area Harvested (ha)"
+        required
+      />
+      <br /><br />
+
+      <label for="yield_amount">Yield Amount (tons/ha):</label>
+      <input
+        type="number"
+        step="0.01"
+        id="yield_amount"
+        name="yield_amount"
+        placeholder="Yield Amount (tons/ha)"
+        required
+      />
+      <br /><br />
+
+      <label for="production">Production (tons):</label>
+      <input
+        type="number"
+        step="0.01"
+        id="production"
+        name="production"
+        placeholder="Production (tons)"
+        readonly
+        required
+      />
+      <br /><br />
+
+      <button type="submit">Add Yield</button>
+      <a href="{{ url_for('main.dashboard') }}" class="btn-secondary">Cancel</a>
+    </form>
+
+    <script>
+      $(document).ready(function () {
+        const $district = $("#district_id");
+        const $municipality = $("#municipality_id");
+
+        function filterMunicipalities(selectedDistrict) {
+          $municipality.val("");
+          let found = false;
+
+          $municipality
+            .find("option")
+            .not(":first")
+            .each(function () {
+              const districtId = $(this).data("district");
+              if (districtId == selectedDistrict) {
+                $(this).show();
+                found = true;
+              } else {
+                $(this).hide();
+              }
+            });
+
+          $municipality.prop("disabled", !found);
+        }
+
+        $district.change(function () {
+          filterMunicipalities($(this).val());
+        });
+
+        $("#area_harvested, #yield_amount").on("input", function () {
+          const area = parseFloat($("#area_harvested").val()) || 0;
+          const yieldVal = parseFloat($("#yield_amount").val()) || 0;
+          $("#production").val((area * yieldVal).toFixed(2));
+        });
+      });
+    </script>
+  </body>
+</html>

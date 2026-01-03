@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Edit Yield Record</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <h1>Edit Yield Record</h1>
+
+    <form method="POST">
+
+      <!-- Crop -->
+      <label for="crop_id">Crop:</label>
+      <select id="crop_id" name="crop_id" required>
+        {% for crop in crops %}
+        <option value="{{ crop.CropId }}"
+          {% if crop.CropId == yield_record.cropid %}selected{% endif %}>
+          {{ crop.CropName }}
+        </option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <!-- Season -->
+      <label for="season_id">Season:</label>
+      <select id="season_id" name="season_id" required>
+        <option value="">Select Season</option>
+        {% for season in seasons %}
+        <option value="{{ season.seasonid }}"
+          {% if season.seasonid == yield_record.seasonid %}selected{% endif %}>
+          {{ season.seasonname }}
+        </option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <!-- District -->
+      <label for="district_id">District:</label>
+      <select id="district_id" name="district_id" required>
+        <option value="">Select District</option>
+        {% for district in districts %}
+        <option value="{{ district.districtid }}"
+          {% if district.districtid == yield_record.districtid %}selected{% endif %}>
+          {{ district.districtname }}
+        </option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <!-- Municipality -->
+      <label for="municipality_id">Municipality:</label>
+      <select id="municipality_id" name="municipality_id" required>
+        <option value="">Select Municipality</option>
+        {% for muni in municipalities %}
+        <option value="{{ muni.municipalityid }}" data-district="{{ muni.districtid }}"
+          {% if muni.municipalityid == yield_record.municipalityid %}selected{% endif %}>
+          {{ muni.municipalityname }}
+        </option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <!-- Year -->
+      <label for="year">Year:</label>
+      <input type="number" id="year" name="year"
+             value="{{ yield_record.year }}" required />
+      <br /><br />
+
+      <!-- Area -->
+      <label for="area_harvested">Area Harvested (ha):</label>
+      <input type="number" step="0.01" id="area_harvested"
+             name="area_harvested"
+             value="{{ yield_record.areaharvested }}" required />
+      <br /><br />
+
+      <!-- Yield -->
+      <label for="yield_amount">Yield Amount (tons/ha):</label>
+      <input type="number" step="0.01" id="yield_amount"
+             name="yield_amount"
+             value="{{ yield_record.yieldamount }}" required />
+      <br /><br />
+
+      <!-- Production -->
+      <label for="production">Production (tons):</label>
+      <input type="number" step="0.01" id="production"
+             name="production"
+             value="{{ yield_record.production }}" readonly required />
+      <br /><br />
+
+      <button type="submit">Update Yield</button>
+      <a href="{{ url_for('main.dashboard') }}" class="btn-secondary">Cancel</a>
+    </form>
+
+    <script>
+      $(document).ready(function () {
+        const $district = $("#district_id");
+        const $municipality = $("#municipality_id");
+
+        function filterMunicipalities(selectedDistrict, preserveSelection) {
+          if (!preserveSelection) $municipality.val("");
+
+          let found = false;
+          $municipality.find("option").not(":first").each(function () {
+            if ($(this).data("district") == selectedDistrict) {
+              $(this).show();
+              found = true;
+            } else {
+              $(this).hide();
+            }
+          });
+
+          $municipality.prop("disabled", !found && selectedDistrict !== "");
+        }
+
+        // Initialize municipality filter
+        if ($district.val()) {
+          filterMunicipalities($district.val(), true);
+        }
+
+        $district.change(function () {
+          filterMunicipalities($(this).val(), false);
+        });
+
+        // Auto-calculate Production
+        $("#area_harvested, #yield_amount").on("input", function () {
+          const area = parseFloat($("#area_harvested").val()) || 0;
+          const yld = parseFloat($("#yield_amount").val()) || 0;
+          $("#production").val((area * yld).toFixed(2));
+        });
+      });
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Master Crops List</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Master Crops</h1>
+
+    <a href="{{ url_for('main.add_crop_master') }}">Add New Crop</a>
+    <br /><br />
+
+    {% if crops %}
+    <table border="1" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          {% for col in columns %}
+          <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for crop in crops %}
+        <tr>
+          {% for col in columns %}
+          <td>{{ crop[col] }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No crops available.</p>
+    {% endif %}
+
+    <br />
+    <a href="{{ url_for('main.dashboard') }}">Back to Yield Records</a>
+  </body>
+</html>

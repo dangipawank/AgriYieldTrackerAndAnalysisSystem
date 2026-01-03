@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: Flask",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flask",
+      "env": {
+        "FLASK_APP": "app.py",
+        "FLASK_DEBUG": "0"
+      },
+      "args": [
+        "run",
+        "--no-debugger",
+        "--no-reload"
+      ],
+      "jinja": true,
+      "justMyCode": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}
+```
+
+Save it.
+
+---
+
+## **RESTART FRESH:**
+
+1. **Kill all Python processes** (use Task Manager if needed)
+2. **Close all Terminal tabs** in VSCode
+3. Press **`F5`** to start debugging fresh
+4. Submit the form
+5. VSCode should pause at the **red dot** breakpoint
+6. Now the **debug toolbar buttons will work!**
+
+---
+
+## **WHY breakpoint() CAUSED ISSUES:**
+
+`breakpoint()` launches **PDB** which is a text-based debugger that expects commands typed in the Terminal:
+```
+(Pdb) n  # next
+(Pdb) c  # continue
+(Pdb) q  # quit
