@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Add Master Crop</title>
+    <title>Edit Master Crop</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   </head>
   <body>
-    <h1>Add Master Crop</h1>
+    <h1>Edit Master Crop</h1>
 
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -15,7 +16,7 @@
       {% endif %}
     {% endwith %}
 
-    <form method="POST" action="{{ url_for('main.add_crop_master') }}">
+    <form method="POST" action="{{ url_for('main.edit_crop_master', crop_id=form_data.CropId) }}">
       <!-- Crop Name -->
       <label for="crop_name">Crop Name:</label>
       <input
@@ -23,27 +24,26 @@
         id="crop_name"
         name="crop_name"
         placeholder="Enter crop name"
-        value="{{ form_data.crop_name if form_data else '' }}"
+        value="{{ form_data.crop_name }}"
+        
       />
       <br /><br />
 
       <!-- Crop Type -->
       <label for="croptype">Crop Type:</label>
-      <select id="croptype" name="croptype_id">
+      <select id="croptype" name="croptype_id" >
         <option value="">-- Select Crop Type --</option>
         {% for ct in crop_types %}
           <option value="{{ ct.croptypeid }}"
-            {% if form_data and form_data.croptype_id == ct.croptypeid|string %}selected{% endif %}>
+            {% if form_data.croptype_id|string == ct.croptypeid|string %}selected{% endif %}>
             {{ ct.croptypename }}
           </option>
         {% endfor %}
       </select>
       <br /><br />
 
-      <button type="submit">Add Crop</button>
+      <button type="submit">Update Crop</button>
+      <a href="{{ url_for('main.list_crop_master') }}" class="btn-secondary">Cancel</a>
     </form>
-
-    <br />
-    <a href="{{ url_for('main.list_crop_master') }}">View All Master Crops</a>
   </body>
 </html>

@@ -8,16 +8,24 @@
   <body>
     <h1>Edit Yield Record</h1>
 
-    <form method="POST">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
+    <form method="POST">
       <!-- Crop -->
       <label for="crop_id">Crop:</label>
       <select id="crop_id" name="crop_id" required>
+        <option value="">Select Crop</option>
         {% for crop in crops %}
-        <option value="{{ crop.CropId }}"
-          {% if crop.CropId == yield_record.cropid %}selected{% endif %}>
-          {{ crop.CropName }}
-        </option>
+          <option value="{{ crop.CropId }}"
+            {% if form_data.crop_id == crop.CropId %}selected{% endif %}>
+            {{ crop.CropName }}
+          </option>
         {% endfor %}
       </select>
       <br /><br />
@@ -26,11 +34,11 @@
       <label for="season_id">Season:</label>
       <select id="season_id" name="season_id" required>
         <option value="">Select Season</option>
-        {% for season in seasons %}
-        <option value="{{ season.seasonid }}"
-          {% if season.seasonid == yield_record.seasonid %}selected{% endif %}>
-          {{ season.seasonname }}
-        </option>
+        {% for s in seasons %}
+          <option value="{{ s.seasonid }}"
+            {% if form_data.season_id == s.seasonid %}selected{% endif %}>
+            {{ s.seasonname }}
+          </option>
         {% endfor %}
       </select>
       <br /><br />
@@ -39,53 +47,54 @@
       <label for="district_id">District:</label>
       <select id="district_id" name="district_id" required>
         <option value="">Select District</option>
-        {% for district in districts %}
-        <option value="{{ district.districtid }}"
-          {% if district.districtid == yield_record.districtid %}selected{% endif %}>
-          {{ district.districtname }}
-        </option>
+        {% for d in districts %}
+          <option value="{{ d.districtid }}"
+            {% if form_data.district_id == d.districtid %}selected{% endif %}>
+            {{ d.districtname }}
+          </option>
         {% endfor %}
       </select>
       <br /><br />
 
       <!-- Municipality -->
       <label for="municipality_id">Municipality:</label>
-      <select id="municipality_id" name="municipality_id" required>
+      <select id="municipality_id" name="municipality_id" required
+        {% if not form_data.municipality_id %} disabled {% endif %}>
         <option value="">Select Municipality</option>
-        {% for muni in municipalities %}
-        <option value="{{ muni.municipalityid }}" data-district="{{ muni.districtid }}"
-          {% if muni.municipalityid == yield_record.municipalityid %}selected{% endif %}>
-          {{ muni.municipalityname }}
-        </option>
+        {% for m in municipalities %}
+          <option value="{{ m.municipalityid }}" data-district="{{ m.districtid }}"
+            {% if form_data.municipality_id == m.municipalityid %}selected{% endif %}>
+            {{ m.municipalityname }}
+          </option>
         {% endfor %}
       </select>
       <br /><br />
 
       <!-- Year -->
       <label for="year">Year:</label>
-      <input type="number" id="year" name="year"
-             value="{{ yield_record.year }}" required />
+      <input type="number" id="year" name="year" placeholder="Year" required
+             value="{{ form_data.year }}" />
       <br /><br />
 
-      <!-- Area -->
+      <!-- Area Harvested -->
       <label for="area_harvested">Area Harvested (ha):</label>
-      <input type="number" step="0.01" id="area_harvested"
-             name="area_harvested"
-             value="{{ yield_record.areaharvested }}" required />
+      <input type="number" step="0.01" id="area_harvested" name="area_harvested"
+             placeholder="Area Harvested (ha)" required
+             value="{{ form_data.areaharvested }}" />
       <br /><br />
 
-      <!-- Yield -->
+      <!-- Yield Amount -->
       <label for="yield_amount">Yield Amount (tons/ha):</label>
-      <input type="number" step="0.01" id="yield_amount"
-             name="yield_amount"
-             value="{{ yield_record.yieldamount }}" required />
+      <input type="number" step="0.01" id="yield_amount" name="yield_amount"
+             placeholder="Yield Amount (tons/ha)" required
+             value="{{ form_data.yieldamount }}" />
       <br /><br />
 
       <!-- Production -->
       <label for="production">Production (tons):</label>
-      <input type="number" step="0.01" id="production"
-             name="production"
-             value="{{ yield_record.production }}" readonly required />
+      <input type="number" step="0.01" id="production" name="production"
+             placeholder="Production (tons)" readonly required
+             value="{{ form_data.production }}" />
       <br /><br />
 
       <button type="submit">Update Yield</button>
@@ -102,7 +111,8 @@
 
           let found = false;
           $municipality.find("option").not(":first").each(function () {
-            if ($(this).data("district") == selectedDistrict) {
+            const districtId = $(this).data("district");
+            if (districtId == selectedDistrict) {
               $(this).show();
               found = true;
             } else {
@@ -113,23 +123,23 @@
           $municipality.prop("disabled", !found && selectedDistrict !== "");
         }
 
-        // Initialize municipality filter
+        // Initialize municipality filter based on selected district & existing municipality
         if ($district.val()) {
           filterMunicipalities($district.val(), true);
         }
 
+        // Re-filter if district changes
         $district.change(function () {
           filterMunicipalities($(this).val(), false);
         });
 
-        // Auto-calculate Production
+        // Auto-calculate production
         $("#area_harvested, #yield_amount").on("input", function () {
           const area = parseFloat($("#area_harvested").val()) || 0;
-          const yld = parseFloat($("#yield_amount").val()) || 0;
-          $("#production").val((area * yld).toFixed(2));
+          const yieldVal = parseFloat($("#yield_amount").val()) || 0;
+          $("#production").val((area * yieldVal).toFixed(2));
         });
       });
     </script>
-
   </body>
 </html>
