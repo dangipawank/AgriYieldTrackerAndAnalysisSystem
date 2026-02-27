@@ -1,16 +1,11 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, ForeignKey
+﻿from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, ForeignKey, DateTime, func
+from config import Config
 
-# Connect to your database
-engine = create_engine("postgresql+psycopg2://postgres:root@localhost/agridb")
+engine = create_engine(Config.DATABASE_URL)
 
-# Metadata object keeps track of all tables
 metadata = MetaData()
 
-# ============================
-# Mastersetup Schema Tables
-# ============================
 
-# Country Table
 country = Table(
     "country", metadata,
     Column("countryid", Integer, primary_key=True),
@@ -18,7 +13,6 @@ country = Table(
     schema="mastersetup"
 )
 
-# Province Table
 province = Table(
     "province", metadata,
     Column("provinceid", Integer, primary_key=True),
@@ -27,7 +21,6 @@ province = Table(
     schema="mastersetup"
 )
 
-# District Table
 district = Table(
     "district", metadata,
     Column("districtid", Integer, primary_key=True),
@@ -36,7 +29,6 @@ district = Table(
     schema="mastersetup"
 )
 
-# MunicipalityType Table
 municipalitytype = Table(
     "municipalitytype", metadata,
     Column("municipalitytypeid", Integer, primary_key=True),
@@ -44,7 +36,6 @@ municipalitytype = Table(
     schema="mastersetup"
 )
 
-# Municipality Table
 municipality = Table(
     "municipality", metadata,
     Column("municipalityid", Integer, primary_key=True),
@@ -54,33 +45,41 @@ municipality = Table(
     schema="mastersetup"
 )
 
-# ============================
-# Crop & Yield Tables
-# ============================
 
-# Season Master Table
+users = Table(
+    "users", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("username", String(100), nullable=False, unique=True),
+    Column("email", String(150), nullable=False, unique=True),
+    Column("password_hash", String(255), nullable=False),
+    Column("role", String(20), nullable=False),
+    Column("created_at", DateTime, nullable=False, server_default=func.now()),
+    Column("updated_at", DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
+)
+
 season_master = Table(
     "season_master", metadata,
     Column("seasonid", Integer, primary_key=True),
     Column("seasonname", String(50), nullable=False, unique=True)
 )
 
-# Crop Type Master Table
 crop_type_master = Table(
     "crop_type_master", metadata,
     Column("croptypeid", Integer, primary_key=True),
     Column("croptypename", String(100), nullable=False)
 )
 
-# Crop Master Table
 crop_master = Table(
     "crop_master", metadata,
     Column("CropId", Integer, primary_key=True),
     Column("CropName", String(100), nullable=False),
-    Column("croptypeid", Integer, ForeignKey("crop_type_master.croptypeid"), nullable=False)
+    Column("croptypeid", Integer, ForeignKey("crop_type_master.croptypeid"), nullable=False),
+    Column("created_by", Integer, ForeignKey("users.id"), nullable=True),
+    Column("updated_by", Integer, ForeignKey("users.id"), nullable=True),
+    Column("created_at", DateTime, nullable=False, server_default=func.now()),
+    Column("updated_at", DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
 )
 
-# Yield Data Table
 yielddata = Table(
     "yielddata", metadata,
     Column("yieldid", Integer, primary_key=True),
@@ -91,15 +90,14 @@ yielddata = Table(
     Column("areaharvested", Float, nullable=False),
     Column("production", Float, nullable=False),
     Column("districtid", Integer, ForeignKey("mastersetup.district.districtid"), nullable=False),
-    Column("municipalityid", Integer, ForeignKey("mastersetup.municipality.municipalityid"), nullable=False)
+    Column("municipalityid", Integer, ForeignKey("mastersetup.municipality.municipalityid"), nullable=False),
+    Column("created_by", Integer, ForeignKey("users.id"), nullable=True),
+    Column("updated_by", Integer, ForeignKey("users.id"), nullable=True),
+    Column("created_at", DateTime, nullable=False, server_default=func.now()),
+    Column("updated_at", DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
 )
 
-# ============================
-# View: Yield Full Report
-# ============================
 
-# Note: Views in PostgreSQL cannot be created by SQLAlchemy Core directly
-# You can define a Table object for querying purposes only
 yield_full_report = Table(
     "vw_yield_full_report", metadata,
     Column("yieldid", Integer, primary_key=True),
@@ -119,12 +117,5 @@ yield_full_report = Table(
     Column("MunicipalityTypeName", String(500)),
     Column("seasonid", Integer),
     Column("seasonname", String(50))
-    # No schema needed, views usually in default schema
 )
 
-# ============================
-# Create All Tables
-# ============================
-
-metadata.create_all(engine)
-print("All tables created programmatically using SQLAlchemy Core!")

@@ -1,0 +1,35 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Edit Crop Type</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Edit Crop Type</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label for="croptypename">Crop Type Name:</label>
+      <input
+        type="text"
+        id="croptypename"
+        name="croptypename"
+        value="{{ form_data.croptypename }}"
+      />
+      {% if field_errors and field_errors.get('croptypename') %}
+      <div class="field-error">{{ field_errors.get('croptypename') }}</div>
+      {% endif %}
+      <br /><br />
+      <button type="submit">Update Crop Type</button>
+      <a href="{{ url_for('main.list_crop_types') }}">Cancel</a>
+    </form>
+  </body>
+</html>

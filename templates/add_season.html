@@ -1,0 +1,35 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Add Season</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Add Season</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label for="seasonname">Season Name:</label>
+      <input
+        type="text"
+        id="seasonname"
+        name="seasonname"
+        value="{{ form_data.seasonname }}"
+      />
+      {% if field_errors and field_errors.get('seasonname') %}
+      <div class="field-error">{{ field_errors.get('seasonname') }}</div>
+      {% endif %}
+      <br /><br />
+      <button type="submit">Add Season</button>
+      <a href="{{ url_for('main.list_seasons') }}">Cancel</a>
+    </form>
+  </body>
+</html>

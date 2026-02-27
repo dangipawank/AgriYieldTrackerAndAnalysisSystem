@@ -1,0 +1,168 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Edit Yield Record</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <h1>Edit Yield Record</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label for="crop_id">Crop:</label>
+      <select id="crop_id" name="crop_id" required>
+        <option value="">Select Crop</option>
+        {% for crop in crops %}
+        <option value="{{ crop.CropId }}">{{ crop.CropName }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="season_id">Season:</label>
+      <select id="season_id" name="season_id" required>
+        <option value="">Select Season</option>
+        {% for s in seasons %}
+        <option value="{{ s.seasonid }}">{{ s.seasonname }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="district_id">District:</label>
+      <select id="district_id" name="district_id" required>
+        <option value="">Select District</option>
+        {% for d in districts %}
+        <option value="{{ d.districtid }}">{{ d.districtname }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="municipality_id">Municipality:</label>
+      <select id="municipality_id" name="municipality_id" required>
+        <option value="">Select Municipality</option>
+        {% for m in municipalities %}
+        <option
+          value="{{ m.municipalityid }}"
+          data-district="{{ m.districtid }}"
+        >
+          {{ m.municipalityname }}
+        </option>
+        {% endfor %}
+      </select>
+      <br /><br />
+
+      <label for="year">Year:</label>
+      <input
+        type="number"
+        id="year"
+        name="year"
+        required
+        value="{{ form_data.year }}"
+      />
+      <br /><br />
+
+      <label for="area_harvested">Area Harvested (ha):</label>
+      <input
+        type="number"
+        step="0.01"
+        id="area_harvested"
+        name="area_harvested"
+        required
+        value="{{ form_data.areaharvested }}"
+      />
+      <br /><br />
+
+      <label for="yield_amount">Yield Amount (tons/ha):</label>
+      <input
+        type="number"
+        step="0.01"
+        id="yield_amount"
+        name="yield_amount"
+        required
+        value="{{ form_data.yieldamount }}"
+      />
+      <br /><br />
+
+      <label for="production">Production (tons):</label>
+      <input
+        type="number"
+        step="0.01"
+        id="production"
+        name="production"
+        readonly
+        required
+        value="{{ form_data.production }}"
+      />
+      <br /><br />
+
+      <button type="submit">Update Yield</button>
+      <a href="{{ url_for('main.dashboard') }}">Cancel</a>
+    </form>
+
+    <script>
+      $(document).ready(function () {
+        const existingCrop = "{{ form_data.crop_id }}";
+        const existingSeason = "{{ form_data.season_id }}";
+        const existingDistrict = "{{ form_data.district_id }}";
+        const existingMunicipality = "{{ form_data.municipality_id }}";
+
+        if (existingCrop) {
+          $("#crop_id").val(existingCrop);
+        }
+        if (existingSeason) {
+          $("#season_id").val(existingSeason);
+        }
+        if (existingDistrict) {
+          $("#district_id").val(existingDistrict);
+        }
+
+        function filterMunicipalities(selectedDistrict, preserveSelection) {
+          if (!preserveSelection) {
+            $("#municipality_id").val("");
+          }
+          let found = false;
+          $("#municipality_id")
+            .find("option")
+            .not(":first")
+            .each(function () {
+              const districtId = $(this).data("district");
+              if (districtId == selectedDistrict) {
+                $(this).show();
+                found = true;
+              } else {
+                $(this).hide();
+              }
+            });
+          $("#municipality_id").prop(
+            "disabled",
+            !found && selectedDistrict !== "",
+          );
+        }
+
+        if (existingDistrict) {
+          filterMunicipalities(existingDistrict, true);
+          if (existingMunicipality) {
+            $("#municipality_id").val(existingMunicipality);
+          }
+        }
+
+        $("#district_id").change(function () {
+          filterMunicipalities($(this).val(), false);
+        });
+
+        $("#area_harvested, #yield_amount").on("input", function () {
+          const area = parseFloat($("#area_harvested").val()) || 0;
+          const yieldVal = parseFloat($("#yield_amount").val()) || 0;
+          $("#production").val((area * yieldVal).toFixed(2));
+        });
+      });
+    </script>
+  </body>
+</html>

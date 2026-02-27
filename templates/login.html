@@ -1,0 +1,48 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Login - AgriYieldTracker</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="auth-container">
+      <h1>Login</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %} {% if errors.get('global') %}
+      <div class="alert alert-danger">{{ errors.get('global') }}</div>
+      {% endif %}
+
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <label for="login">Username or Email</label>
+        <input type="text" id="login" name="login" value="{{ login_value }}" />
+        {% if errors.get('login') %}
+        <div class="field-error">{{ errors.get('login') }}</div>
+        {% endif %}
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" />
+        {% if errors.get('password') %}
+        <div class="field-error">{{ errors.get('password') }}</div>
+        {% endif %}
+
+        <button type="submit">Login</button>
+      </form>
+
+      <p class="hint">
+        Default users (after init_db):
+        <strong>admin / admin123</strong>,
+        <strong>officer / officer123</strong>,
+        <strong>farmer / farmer123</strong>
+      </p>
+      <p class="hint">User accounts are created and managed by Admin.</p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Add Master Crop</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Add Master Crop</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <form method="POST" action="{{ url_for('main.add_crop_master') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label for="crop_name">Crop Name:</label>
+      <input
+        type="text"
+        id="crop_name"
+        name="crop_name"
+        value="{{ form_data.crop_name if form_data else '' }}"
+      />
+      {% if field_errors and field_errors.get('crop_name') %}
+      <div class="field-error">{{ field_errors.get('crop_name') }}</div>
+      {% endif %} <br /><br />
+
+      <label for="croptype">Crop Type:</label>
+      <select id="croptype" name="croptype_id">
+        <option value="">-- Select Crop Type --</option>
+        {% for ct in crop_types %}
+        <option value="{{ ct.croptypeid }}">{{ ct.croptypename }}</option>
+        {% endfor %}
+      </select>
+      {% if field_errors and field_errors.get('croptype_id') %}
+      <div class="field-error">{{ field_errors.get('croptype_id') }}</div>
+      {% endif %} <br /><br />
+
+      <button type="submit">Add Crop</button>
+    </form>
+
+    <script>
+      const selectedCropType =
+        "{{ form_data.croptype_id if form_data else '' }}";
+      if (selectedCropType) {
+        document.getElementById("croptype").value = selectedCropType;
+      }
+    </script>
+
+    <br />
+    <a href="{{ url_for('main.list_crop_master') }}">View All Master Crops</a> |
+    <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
+  </body>
+</html>

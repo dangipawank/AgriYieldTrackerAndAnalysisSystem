@@ -1,59 +1,54 @@
 ﻿<!doctype html>
 <html>
   <head>
-    <title>Master Crops List</title>
+    <title>Crop Types</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
   </head>
   <body>
-    <h1>Master Crops</h1>
+    <h1>Crop Types</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %} {% if
     messages %} {% for category, message in messages %}
     <div class="alert alert-{{ category }}">{{ message }}</div>
     {% endfor %} {% endif %} {% endwith %}
 
-    <a href="{{ url_for('main.add_crop_master') }}"
-      ><button>Add New Crop</button></a
+    <a href="{{ url_for('main.add_crop_type') }}"
+      ><button>Add Crop Type</button></a
     >
-    <a href="{{ url_for('main.list_crop_types') }}"
-      ><button>Manage Crop Types</button></a
+    <a href="{{ url_for('main.list_crop_master') }}"
+      ><button>Manage Crops</button></a
     >
     <a href="{{ url_for('main.list_seasons') }}"
       ><button>Manage Seasons</button></a
     >
 
-    {% if crops %}
     <table>
       <thead>
         <tr>
-          {% for col in columns %}
-          <th>{{ col }}</th>
-          {% endfor %}
+          <th>ID</th>
+          <th>Crop Type Name</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for crop in crops %}
+        {% for ct in crop_types %}
         <tr>
-          {% for col in columns %}
-          <td>{{ crop[col] }}</td>
-          {% endfor %}
+          <td>{{ ct.croptypeid }}</td>
+          <td>{{ ct.croptypename }}</td>
           <td>
             <a
-              href="{{ url_for('main.edit_crop_master', crop_id=crop['CropId']) }}"
+              href="{{ url_for('main.edit_crop_type', croptype_id=ct.croptypeid) }}"
               >Edit</a
             >
             |
             <form
               method="POST"
-              action="{{ url_for('main.delete_crop_master', crop_id=crop['CropId']) }}"
+              action="{{ url_for('main.delete_crop_type', croptype_id=ct.croptypeid) }}"
               style="display: inline"
-              onsubmit="
-                return confirm('Are you sure you want to delete this crop?');
-              "
+              onsubmit="return confirm('Delete this crop type?');"
             >
               <input
                 type="hidden"
@@ -67,9 +62,6 @@
         {% endfor %}
       </tbody>
     </table>
-    {% else %}
-    <p>No crops available.</p>
-    {% endif %}
 
     <br />
     <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
