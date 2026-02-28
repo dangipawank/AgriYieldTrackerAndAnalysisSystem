@@ -3,7 +3,6 @@
   <head>
     <title>Add Yield Record</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
   <body>
     <h1>Add Yield Record</h1>
@@ -95,48 +94,55 @@
     </form>
 
     <script>
-      $(document).ready(function () {
-        const $district = $("#district_id");
-        const $municipality = $("#municipality_id");
+      document.addEventListener("DOMContentLoaded", function () {
+        const district = document.getElementById("district_id");
+        const municipality = document.getElementById("municipality_id");
+        const areaHarvested = document.getElementById("area_harvested");
+        const yieldAmount = document.getElementById("yield_amount");
+        const production = document.getElementById("production");
 
-        function filterMunicipalities(selectedDistrict) {
-          $municipality.val("");
+        function filterMunicipalities(selectedDistrict, preserveSelection) {
+          if (!preserveSelection) {
+            municipality.value = "";
+          }
+
           let found = false;
+          Array.from(municipality.options)
+            .slice(1)
+            .forEach((option) => {
+              const districtId = option.dataset.district;
+              if (districtId == selectedDistrict) {
+                option.hidden = false;
+                found = true;
+              } else {
+                option.hidden = true;
+              }
+            });
 
-          $municipality.find("option").not(":first").each(function () {
-            const districtId = $(this).data("district");
-            if (districtId == selectedDistrict) {
-              $(this).show();
-              found = true;
-            } else {
-              $(this).hide();
-            }
-          });
-
-          $municipality.prop("disabled", !found);
+          municipality.disabled = !found;
         }
 
-        // When district changes
-        $district.change(function () {
-          filterMunicipalities($(this).val());
+        district.addEventListener("change", function () {
+          filterMunicipalities(district.value, false);
         });
 
-        // Reapply municipality filter if form_data exists
-        const selectedDistrict = $district.val();
+        const selectedDistrict = district.value;
         const previousMunicipality = "{{ form_data.get('municipality_id', '') }}";
         if (selectedDistrict) {
-          filterMunicipalities(selectedDistrict);
+          filterMunicipalities(selectedDistrict, true);
           if (previousMunicipality) {
-            $municipality.val(previousMunicipality);
+            municipality.value = previousMunicipality;
           }
         }
 
-        // Auto-calculate production
-        $("#area_harvested, #yield_amount").on("input", function () {
-          const area = parseFloat($("#area_harvested").val()) || 0;
-          const yieldVal = parseFloat($("#yield_amount").val()) || 0;
-          $("#production").val((area * yieldVal).toFixed(2));
-        });
+        function updateProduction() {
+          const area = parseFloat(areaHarvested.value) || 0;
+          const yieldVal = parseFloat(yieldAmount.value) || 0;
+          production.value = (area * yieldVal).toFixed(2);
+        }
+
+        areaHarvested.addEventListener("input", updateProduction);
+        yieldAmount.addEventListener("input", updateProduction);
       });
     </script>
   </body>

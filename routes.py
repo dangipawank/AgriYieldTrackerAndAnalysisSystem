@@ -1,7 +1,9 @@
 ﻿from datetime import datetime
 from io import BytesIO
+import csv
+import io
 
-import pandas as pd
+from openpyxl import Workbook
 from flask import Blueprint, flash, render_template, request, redirect, url_for, send_file, Response, session
 from sqlalchemy import select, func, insert, update, delete, text
 from sqlalchemy.exc import IntegrityError
@@ -943,10 +945,15 @@ def export_full_report(file_format):
         flash("No data to export for current filters.", "danger")
         return redirect(url_for("main.full_yield_report", year=selected_year, crop_id=selected_crop_id, district_id=selected_district_id, season_id=selected_season_id))
 
-    dataframe = pd.DataFrame(rows)
+    columns = list(rows[0].keys())
 
     if file_format.lower() == "csv":
-        csv_data = dataframe.to_csv(index=False)
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=columns)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({column: row[column] for column in columns})
+        csv_data = output.getvalue()
         return Response(
             csv_data,
             mimetype="text/csv",
@@ -954,8 +961,15 @@ def export_full_report(file_format):
         )
 
     if file_format.lower() == "excel":
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.title = "Yield Report"
+        worksheet.append(columns)
+        for row in rows:
+            worksheet.append([row[column] for column in columns])
+
         output = BytesIO()
-        dataframe.to_excel(output, index=False)
+        workbook.save(output)
         output.seek(0)
         return send_file(
             output,
