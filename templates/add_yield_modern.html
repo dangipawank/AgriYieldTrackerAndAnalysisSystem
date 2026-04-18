@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Add Yield - Agri-Yield Tracker{% endblock %}
+{% block page_title %}Add Yield{% endblock %}
+{% block page_subtitle %}Create a new yield record{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl space-y-6">
+  <div class="bg-white rounded-lg shadow p-8">
+    <form method="POST" class="space-y-6">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="crop_id" class="block text-sm font-semibold text-gray-700 mb-2">Crop <span class="text-red-500">*</span></label>
+          <select name="crop_id" id="crop_id" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+            <option value="">Select crop</option>
+            {% for crop in crops %}
+            <option value="{{ crop.CropId }}" {% if form_data.get('crop_id') == crop.CropId %}selected{% endif %}>{{ crop.CropName }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="season_id" class="block text-sm font-semibold text-gray-700 mb-2">Season <span class="text-red-500">*</span></label>
+          <select name="season_id" id="season_id" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+            <option value="">Select season</option>
+            {% for season in seasons %}
+            <option value="{{ season.seasonid }}" {% if form_data.get('season_id') == season.seasonid %}selected{% endif %}>{{ season.seasonname }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="district_id" class="block text-sm font-semibold text-gray-700 mb-2">District <span class="text-red-500">*</span></label>
+          <select name="district_id" id="district_id" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+            <option value="">Select district</option>
+            {% for district in districts %}
+            <option value="{{ district.districtid }}" {% if form_data.get('district_id') == district.districtid %}selected{% endif %}>{{ district.districtname }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="municipality_id" class="block text-sm font-semibold text-gray-700 mb-2">Municipality <span class="text-red-500">*</span></label>
+          <select name="municipality_id" id="municipality_id" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+            <option value="">Select municipality</option>
+            {% for municipality in municipalities %}
+            <option value="{{ municipality.municipalityid }}" data-district="{{ municipality.districtid }}" {% if form_data.get('municipality_id') == municipality.municipalityid %}selected{% endif %}>{{ municipality.municipalityname }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="year" class="block text-sm font-semibold text-gray-700 mb-2">Year <span class="text-red-500">*</span></label>
+          <input type="number" name="year" id="year" value="{{ form_data.get('year', '') }}" min="1900" max="2100" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+        </div>
+
+        <div>
+          <label for="area_harvested" class="block text-sm font-semibold text-gray-700 mb-2">Area Harvested (ha) <span class="text-red-500">*</span></label>
+          <input type="number" name="area_harvested" id="area_harvested" value="{{ form_data.get('areaharvested', '') }}" step="0.01" min="0" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+        </div>
+
+        <div>
+          <label for="yield_amount" class="block text-sm font-semibold text-gray-700 mb-2">Yield Amount (kg/ha) <span class="text-red-500">*</span></label>
+          <input type="number" name="yield_amount" id="yield_amount" value="{{ form_data.get('yieldamount', '') }}" step="0.01" min="0" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+        </div>
+
+        <div>
+          <label for="production" class="block text-sm font-semibold text-gray-700 mb-2">Production (tons) <span class="text-red-500">*</span></label>
+          <input type="number" name="production" id="production" value="{{ form_data.get('production', '') }}" step="0.01" min="0" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+        </div>
+      </div>
+
+      <div class="flex gap-4 pt-6 border-t border-gray-200">
+        <button type="submit" class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Submit</button>
+        <a href="{{ url_for('main.dashboard') }}" class="flex-1 px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition text-center">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const districtSelect = document.getElementById("district_id");
+    const municipalitySelect = document.getElementById("municipality_id");
+    const areaHarvestedInput = document.getElementById("area_harvested");
+    const yieldAmountInput = document.getElementById("yield_amount");
+    const productionInput = document.getElementById("production");
+
+    function filterMunicipalities(selectedDistrict, preserveSelection) {
+      if (!preserveSelection) {
+        municipalitySelect.value = "";
+      }
+
+      let hasVisibleOption = false;
+      Array.from(municipalitySelect.options)
+        .slice(1)
+        .forEach((option) => {
+          const optionDistrict = option.dataset.district;
+          const isMatch = selectedDistrict && optionDistrict === String(selectedDistrict);
+          option.hidden = !isMatch;
+          if (isMatch) {
+            hasVisibleOption = true;
+          }
+        });
+
+      municipalitySelect.disabled = !hasVisibleOption;
+    }
+
+    function updateProduction() {
+      const areaValue = parseFloat(areaHarvestedInput.value) || 0;
+      const yieldValue = parseFloat(yieldAmountInput.value) || 0;
+      productionInput.value = (areaValue * yieldValue).toFixed(2);
+    }
+
+    districtSelect.addEventListener("change", function () {
+      filterMunicipalities(districtSelect.value, false);
+    });
+
+    areaHarvestedInput.addEventListener("input", updateProduction);
+    yieldAmountInput.addEventListener("input", updateProduction);
+
+    const initialDistrict = districtSelect.value;
+    const previousMunicipality = "{{ form_data.get('municipality_id', '') }}";
+    if (initialDistrict) {
+      filterMunicipalities(initialDistrict, true);
+      if (previousMunicipality) {
+        municipalitySelect.value = previousMunicipality;
+      }
+    } else {
+      municipalitySelect.disabled = true;
+      Array.from(municipalitySelect.options).slice(1).forEach((option) => {
+        option.hidden = true;
+      });
+    }
+
+    if (areaHarvestedInput.value || yieldAmountInput.value) {
+      updateProduction();
+    }
+  });
+</script>
+{% endblock %}

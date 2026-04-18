@@ -1,4 +1,4 @@
-﻿from sqlalchemy import text, select, insert
+from sqlalchemy import text, select, insert
 
 from models import engine, metadata, users, season_master
 from services.auth_service import hash_password, ROLE_ADMIN, ROLE_FARMER, ROLE_OFFICER

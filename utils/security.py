@@ -1,4 +1,4 @@
-﻿import secrets
+import secrets
 from functools import wraps
 from flask import session, request, abort, flash, redirect, url_for
 

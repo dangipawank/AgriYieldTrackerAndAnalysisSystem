@@ -1,35 +1,34 @@
-﻿<!doctype html>
-<html>
-  <head>
-    <title>Edit Crop Type</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-  </head>
-  <body>
-    <h1>Edit Crop Type</h1>
+﻿{% extends "base.html" %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %} {% for category, message in messages %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %} {% endif %} {% endwith %}
+{% block title %}Edit Crop Type - Agri-Yield Tracker & Analysis System{% endblock %}
+{% block page_title %}Edit Crop Type{% endblock %}
+{% block page_subtitle %}Update an existing crop classification{% endblock %}
 
-    <form method="POST">
+{% block content %}
+{% set field_errors = field_errors if field_errors is defined else {} %}
+<div class="max-w-3xl space-y-6 mx-auto">
+  <div class="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
+    <div class="mb-6 pb-6 border-b border-gray-200">
+      <h3 class="text-xl font-bold text-gray-800">Update Crop Type</h3>
+      <p class="text-sm text-gray-600 mt-1">Keep names short, clear, and unique</p>
+    </div>
+
+    <form method="POST" class="space-y-6">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label for="croptypename">Crop Type Name:</label>
-      <input
-        type="text"
-        id="croptypename"
-        name="croptypename"
-        value="{{ form_data.croptypename }}"
-      />
-      {% if field_errors and field_errors.get('croptypename') %}
-      <div class="field-error">{{ field_errors.get('croptypename') }}</div>
-      {% endif %}
-      <br /><br />
-      <button type="submit">Update Crop Type</button>
-      <a href="{{ url_for('main.list_crop_types') }}">Cancel</a>
+
+      <div>
+        <label for="croptypename" class="block text-sm font-semibold text-gray-700 mb-2">Crop Type Name <span class="text-red-500">*</span></label>
+        <input type="text" id="croptypename" name="croptypename" value="{{ form_data.get('croptypename', '') }}" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+        {% if field_errors.get('croptypename') %}
+        <p class="mt-2 text-sm text-red-600">{{ field_errors.get('croptypename') }}</p>
+        {% endif %}
+      </div>
+
+      <div class="flex gap-4 pt-6 border-t border-gray-200">
+        <button type="submit" class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Save Changes</button>
+        <a href="{{ url_for('main.list_crop_types') }}" class="flex-1 px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition text-center">Cancel</a>
+      </div>
     </form>
-  </body>
-</html>
+  </div>
+</div>
+{% endblock %}

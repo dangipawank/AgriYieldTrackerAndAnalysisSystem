@@ -1,35 +1,47 @@
-﻿<!doctype html>
-<html>
-  <head>
-    <title>Add Season</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-  </head>
-  <body>
-    <h1>Add Season</h1>
+﻿{% extends "base.html" %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %} {% for category, message in messages %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %} {% endif %} {% endwith %}
+{% block title %}Add Season - Agri-Yield Tracker & Analysis System{% endblock %}
+{% block page_title %}Add Season{% endblock %}
+{% block page_subtitle %}Create a growing season entry{% endblock %}
 
-    <form method="POST">
+{% block content %}
+{% set field_errors = field_errors if field_errors is defined else {} %}
+<div class="max-w-3xl space-y-6 mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-t-4 border-t-green-500">
+      <p class="text-gray-600 text-sm font-semibold">Season setup</p>
+      <p class="text-2xl font-bold text-gray-900 mt-2">New entry</p>
+      <p class="text-xs text-gray-500 mt-2">Use a clear label such as Wet, Dry, or Spring</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-t-4 border-t-blue-500">
+      <p class="text-gray-600 text-sm font-semibold">Data impact</p>
+      <p class="text-2xl font-bold text-gray-900 mt-2">High</p>
+      <p class="text-xs text-gray-500 mt-2">Season names are used in yield records</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
+    <div class="mb-6 pb-6 border-b border-gray-200">
+      <h3 class="text-xl font-bold text-gray-800">Add Season</h3>
+      <p class="text-sm text-gray-600 mt-1">Use a clear season label such as Wet, Dry, or Spring</p>
+    </div>
+
+    <form method="POST" class="space-y-6">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label for="seasonname">Season Name:</label>
-      <input
-        type="text"
-        id="seasonname"
-        name="seasonname"
-        value="{{ form_data.seasonname }}"
-      />
-      {% if field_errors and field_errors.get('seasonname') %}
-      <div class="field-error">{{ field_errors.get('seasonname') }}</div>
-      {% endif %}
-      <br /><br />
-      <button type="submit">Add Season</button>
-      <a href="{{ url_for('main.list_seasons') }}">Cancel</a>
+
+      <div>
+        <label for="seasonname" class="block text-sm font-semibold text-gray-700 mb-2">Season Name <span class="text-red-500">*</span></label>
+        <input type="text" id="seasonname" name="seasonname" value="{{ form_data.get('seasonname', '') }}" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+        {% if field_errors.get('seasonname') %}
+        <p class="mt-2 text-sm text-red-600">{{ field_errors.get('seasonname') }}</p>
+        {% endif %}
+      </div>
+
+      <div class="flex gap-4 pt-6 border-t border-gray-200">
+        <button type="submit" class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Add Season</button>
+        <a href="{{ url_for('main.list_seasons') }}" class="flex-1 px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition text-center">Cancel</a>
+      </div>
     </form>
-  </body>
-</html>
+  </div>
+</div>
+{% endblock %}

@@ -1,48 +1,157 @@
 ﻿<!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>Login - AgriYieldTracker</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Agri-Yield Tracker & Analysis System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
+      href="{{ url_for('static', filename='style.css', v='20260417c') }}"
     />
   </head>
-  <body>
-    <div class="auth-container">
-      <h1>Login</h1>
+  <body
+    class="login-gradient-bg min-h-screen flex items-center justify-center px-4"
+  >
+    <div class="w-full max-w-md">
+      
+      <div class="text-center mb-8">
+        <div
+          class="size-20 mx-auto bg-white rounded-full shadow-xl flex items-center justify-center mb-4"
+        >
+          <svg
+            class="w-10 h-10 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 11l7-7 7 7M5 11v6a2 2 0 002 2h10a2 2 0 002-2v-6"
+            ></path>
+          </svg>
+        </div>
+        <h1 class="text-4xl font-bold text-white mb-2">Agri-Yield</h1>
+        <p class="text-green-100">Tracker & Analysis System</p>
+      </div>
 
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %} {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %} {% endif %} {% endwith %} {% if errors.get('global') %}
-      <div class="alert alert-danger">{{ errors.get('global') }}</div>
-      {% endif %}
+      
+      <div class="bg-white rounded-2xl shadow-2xl p-8 backdrop-blur-sm">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Welcome Back</h2>
 
-      <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %} {% for category, message in messages %}
+        <div
+          class="mb-4 p-4 rounded-lg {% if category == 'success' %}bg-green-50 border border-green-200 text-green-700{% else %}bg-red-50 border border-red-200 text-red-700{% endif %}"
+        >
+          <p class="text-sm font-medium">{{ message }}</p>
+        </div>
+        {% endfor %} {% endif %} {% endwith %}
 
-        <label for="login">Username or Email</label>
-        <input type="text" id="login" name="login" value="{{ login_value }}" />
-        {% if errors.get('login') %}
-        <div class="field-error">{{ errors.get('login') }}</div>
+        
+        {% if errors.get('global') %}
+        <div
+          class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700"
+        >
+          <p class="text-sm font-medium">{{ errors['global'] }}</p>
+        </div>
         {% endif %}
 
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" />
-        {% if errors.get('password') %}
-        <div class="field-error">{{ errors.get('password') }}</div>
-        {% endif %}
+        
+        <form method="POST" class="space-y-5">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        <button type="submit">Login</button>
-      </form>
+          
+          <div>
+            <label
+              for="login"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+              >Username</label
+            >
+            <input
+              type="text"
+              id="login"
+              name="login"
+              value="{{ login_value }}"
+              placeholder="Enter username"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-0 transition-colors"
+              required
+              autocomplete="username"
+            />
+            {% if errors.get('login') %}
+            <p class="mt-2 text-sm text-red-600">{{ errors.get('login') }}</p>
+            {% endif %}
+          </div>
 
-      <p class="hint">
-        Default users (after init_db):
-        <strong>admin / admin123</strong>,
-        <strong>officer / officer123</strong>,
-        <strong>farmer / farmer123</strong>
-      </p>
-      <p class="hint">User accounts are created and managed by Admin.</p>
+          
+          <div>
+            <label
+              for="password"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-0 transition-colors"
+              required
+              autocomplete="current-password"
+            />
+            {% if errors.get('password') %}
+            <p class="mt-2 text-sm text-red-600">
+              {{ errors.get('password') }}
+            </p>
+            {% endif %}
+          </div>
+
+          
+          <button
+            type="submit"
+            class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 ease-in-out transform hover:shadow-lg active:scale-95"
+          >
+            Login
+          </button>
+        </form>
+
+        
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-200"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">Default Credentials</span>
+          </div>
+        </div>
+
+        
+        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+          <p class="text-xs text-gray-600 mb-3 font-semibold">
+            Demo Accounts (after init_db):
+          </p>
+          <ul class="text-xs space-y-2 text-gray-700">
+            <li><span class="font-semibold">Admin:</span> admin / admin123</li>
+            <li>
+              <span class="font-semibold">Officer:</span> officer / officer123
+            </li>
+            <li>
+              <span class="font-semibold">Farmer:</span> farmer / farmer123
+            </li>
+          </ul>
+          <p class="text-xs text-gray-500 mt-3 italic">
+            User accounts are created and managed by Admin users.
+          </p>
+        </div>
+      </div>
+
+      
+      <div class="text-center mt-6 text-white text-sm opacity-75">
+        <p>&copy; 2026 Agri-Yield Tracker & Analysis System v1.0</p>
+      </div>
     </div>
   </body>
 </html>

@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from io import BytesIO
 import csv
 import io
@@ -25,6 +25,7 @@ from services.yield_service import (
     get_average_yield,
     get_highest_producing_crop,
     get_latest_year_data_count,
+    get_analysis_summary,
 )
 from services.audit_service import log_audit
 from services.auth_service import ROLE_ADMIN, ROLE_FARMER, ROLE_OFFICER, hash_password
@@ -62,6 +63,40 @@ def validate_yield_data(data):
             errors.append("Invalid season selected")
 
     return errors
+
+
+def _filter_report_columns(report_data):
+    """Remove redundant ID columns and keep only meaningful display columns."""
+    if not report_data:
+        return report_data, []
+
+                                                                           
+    exclude_columns = {
+        'yieldid', 'YieldId',
+        'cropid', 'CropId',
+        'districtid', 'district_id',
+        'provinceid', 'province_id',
+        'municipalityid', 'municipality_id',
+        'seasonid', 'season_id'
+    }
+    
+                                                  
+    all_columns = list(report_data[0].keys()) if report_data else []
+    filtered_columns = [col for col in all_columns if col not in exclude_columns]
+    
+                                                                        
+    column_order = [
+        'year', 'CropName', 'croptypename', 'seasonname',
+        'areaharvested', 'yieldamount', 'production',
+        'municipalityname', 'districtname', 'provincename', 'MunicipalityTypeName'
+    ]
+    
+                                                                     
+    ordered_columns = [col for col in column_order if col in filtered_columns]
+    remaining_columns = [col for col in filtered_columns if col not in column_order]
+    final_columns = ordered_columns + remaining_columns
+    
+    return report_data, final_columns
 
 
 def _build_full_report_query(selected_year, selected_crop_id, selected_district_id, selected_season_id):
@@ -113,6 +148,7 @@ def dashboard():
         with engine.connect() as conn:
             current_user_id = get_current_user_id()
             current_user_role = session.get("role")
+            dashboard_owner_id = current_user_id if current_user_role == ROLE_FARMER else None
 
             yield_query = select(yielddata)
             count_query = select(func.count(yielddata.c.yieldid))
@@ -122,8 +158,11 @@ def dashboard():
                 count_query = count_query.where(yielddata.c.created_by == current_user_id)
 
             result = conn.execute(yield_query.order_by(yielddata.c.year.desc()).limit(10)).mappings()
-            yield_records = result.all()
-            columns = yield_records[0].keys() if yield_records else []
+            yield_records = [dict(r) for r in result.all()]
+                                                         
+            exclude_columns = {'yieldid', 'cropid', 'districtid', 'municipalityid', 'seasonid', 'created_by', 'updated_by', 'created_at', 'updated_at'}
+            all_columns = list(yield_records[0].keys()) if yield_records else []
+            columns = [col for col in all_columns if col not in exclude_columns]
             total_records = conn.execute(count_query).scalar() or 0
 
             farmer_summary = None
@@ -144,17 +183,31 @@ def dashboard():
                     "avg_yield": float(my_production / my_area) if my_area else 0.0,
                 }
 
+        analysis_summary = get_analysis_summary(dashboard_owner_id)
+        chart_scope = "personal" if dashboard_owner_id else "global"
+        if current_user_role == ROLE_FARMER and not analysis_summary.get("by_year"):
+            analysis_summary = get_analysis_summary()
+            chart_scope = "global-fallback"
+        dashboard_chart_data = {
+            "trend_labels": [str(row.get("year")) for row in analysis_summary.get("by_year", [])],
+            "trend_values": [row.get("total_production", 0) for row in analysis_summary.get("by_year", [])],
+            "comparison_labels": [row.get("crop", "") for row in analysis_summary.get("by_crop", [])],
+            "comparison_values": [row.get("total_production", 0) for row in analysis_summary.get("by_crop", [])],
+        }
+
         return render_template(
             "index.html",
             yield_records=yield_records,
             columns=columns,
-            total_production=get_total_production(),
-            total_area=get_total_cultivated_area(),
-            avg_yield_per_ha=get_average_yield(),
+            total_production=get_total_production(dashboard_owner_id),
+            total_area=get_total_cultivated_area(dashboard_owner_id),
+            avg_yield_per_ha=get_average_yield(dashboard_owner_id),
             total_records=total_records,
-            highest_crop=get_highest_producing_crop(),
-            latest_year_data_count=get_latest_year_data_count(),
+            highest_crop=get_highest_producing_crop(dashboard_owner_id),
+            latest_year_data_count=get_latest_year_data_count(dashboard_owner_id),
             farmer_summary=farmer_summary,
+            dashboard_chart_data=dashboard_chart_data,
+            chart_scope=chart_scope,
         )
     except Exception as exc:
         flash(f"Unable to load dashboard: {exc}", "danger")
@@ -169,6 +222,13 @@ def dashboard():
             highest_crop={"crop_name": "N/A", "total_production": 0},
             latest_year_data_count=0,
             farmer_summary=None,
+            chart_scope="global",
+            dashboard_chart_data={
+                "trend_labels": [],
+                "trend_values": [],
+                "comparison_labels": [],
+                "comparison_values": [],
+            },
         )
 
 
@@ -228,7 +288,7 @@ def add_yield():
             flash(error, "danger")
 
         return render_template(
-            "add_yield.html",
+            "add_yield_modern.html",
             crops=crops,
             districts=districts,
             municipalities=municipalities,
@@ -368,8 +428,9 @@ def list_crop_master():
                 crop_type_master, crop_master.c.croptypeid == crop_type_master.c.croptypeid
             )
         ).mappings()
-        crops = result.all()
-        columns = crops[0].keys() if crops else []
+        crops = [dict(r) for r in result.all()]
+                                                                                
+        columns = ['CropName', 'croptypename'] if crops else []
 
     return render_template("list_crops.html", crops=crops, columns=columns)
 
@@ -781,7 +842,7 @@ def add_user_admin():
                 flash("User created successfully.", "success")
                 return redirect(url_for("main.list_users"))
 
-    return render_template("add_user.html", form_data=form_data, errors=errors)
+    return render_template("add_user_modern.html", form_data=form_data, errors=errors)
 
 
 @main.route("/admin/users/<int:user_id>/edit", methods=["GET", "POST"])
@@ -884,7 +945,7 @@ def full_yield_report():
                 owned_ids = select(yielddata.c.yieldid).where(yielddata.c.created_by == current_user_id)
                 query = query.where(yield_full_report.c.yieldid.in_(owned_ids))
             report_data = conn.execute(query).mappings().all()
-            columns = report_data[0].keys() if report_data else []
+            report_data, columns = _filter_report_columns(report_data)
 
             crops = conn.execute(select(crop_master).order_by(crop_master.c.CropName)).mappings().all()
             districts = conn.execute(select(district).order_by(district.c.districtname)).mappings().all()
@@ -945,7 +1006,7 @@ def export_full_report(file_format):
         flash("No data to export for current filters.", "danger")
         return redirect(url_for("main.full_yield_report", year=selected_year, crop_id=selected_crop_id, district_id=selected_district_id, season_id=selected_season_id))
 
-    columns = list(rows[0].keys())
+    rows, columns = _filter_report_columns(rows)
 
     if file_format.lower() == "csv":
         output = io.StringIO()

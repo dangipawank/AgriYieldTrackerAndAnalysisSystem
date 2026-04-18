@@ -1,4 +1,4 @@
-﻿from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, ForeignKey, DateTime, func
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, ForeignKey, DateTime, func
 from config import Config
 
 engine = create_engine(Config.DATABASE_URL)

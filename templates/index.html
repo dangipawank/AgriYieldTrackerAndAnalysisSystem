@@ -1,147 +1,272 @@
-﻿<!doctype html>
-<html>
-  <head>
-    <title>Crop Yield Tracker Dashboard</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-  </head>
-  <body>
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %} {% for category, message in messages %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %} {% endif %} {% endwith %}
+{% extends "base.html" %} {% block title %}Dashboard - Agri-Yield Tracker &
+Analysis System{% endblock %} {% block page_title %}Dashboard{% endblock %} {%
+block page_subtitle %}KPI overview, trend charts, and latest yield records{%
+endblock %} {% block content %}
+<div class="space-y-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-blue-500">
+      <p class="text-gray-600 text-sm font-medium">Total Production</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">
+        {{ '%.1f'|format(total_production) }}
+      </p>
+      <p class="text-xs text-gray-500 mt-1">tons</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-green-500">
+      <p class="text-gray-600 text-sm font-medium">Area Harvested</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">
+        {{ '%.1f'|format(total_area) }}
+      </p>
+      <p class="text-xs text-gray-500 mt-1">ha</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-orange-500">
+      <p class="text-gray-600 text-sm font-medium">Average Yield</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">
+        {{ '%.1f'|format(avg_yield_per_ha) }}
+      </p>
+      <p class="text-xs text-gray-500 mt-1">kg/ha</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-purple-500">
+      <p class="text-gray-600 text-sm font-medium">Top Crop</p>
+      <p class="text-2xl font-bold text-gray-900 mt-2">
+        {{ highest_crop.crop_name }}
+      </p>
+      <p class="text-xs text-gray-500 mt-1">
+        {{ '%.1f'|format(highest_crop.total_production) }} tons
+      </p>
+    </div>
+  </div>
 
-    <div class="top-bar">
-      <h1>Crop Yield Tracker</h1>
-      <div class="top-actions">
-        {% if current_user %}
-        <span class="pill"
-          >{{ current_user.username }} ({{ current_user.role }})</span
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        {% if current_role == 'Farmer' %}Your Production Trend{% else
+        %}Production Trend{% endif %}
+      </h3>
+      <div class="relative w-full h-64">
+        {% if dashboard_chart_data.trend_labels|length == 0 %}
+        <div
+          class="absolute inset-0 flex items-center justify-center text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300"
         >
-        <form
-          method="POST"
-          action="{{ url_for('auth.logout') }}"
-          style="display: inline"
-        >
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <button type="submit">Logout</button>
-        </form>
+          No trend data yet. Add yield records to see the chart.
+        </div>
         {% endif %}
+        <canvas id="dashboardTrendChart"></canvas>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">
+        {% if current_role == 'Farmer' %} Shows only your submitted yield
+        records. {% else %} Shows aggregate production across all submitted
+        yield records. {% endif %}
+      </p>
+      <p class="text-xs text-gray-400 mt-1">
+        {% if chart_scope == 'global-fallback' %}
+        No personal records found, so system-wide data is shown here.
+        {% elif chart_scope == 'personal' %}
+        Personal farmer view.
+        {% endif %}
+      </p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        {% if current_role == 'Farmer' %}Your Crop Comparison{% else %}Crop
+        Comparison{% endif %}
+      </h3>
+      <div class="relative w-full h-64">
+        {% if dashboard_chart_data.comparison_labels|length == 0 %}
+        <div
+          class="absolute inset-0 flex items-center justify-center text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300"
+        >
+          No crop comparison data yet. Add yield records to see the chart.
+        </div>
+        {% endif %}
+        <canvas id="dashboardComparisonChart"></canvas>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">
+        {% if current_role == 'Farmer' %} Compares crops based on your own
+        records. {% else %} Compares crops based on all records in the system.
+        {% endif %}
+      </p>
+      <p class="text-xs text-gray-400 mt-1">
+        {% if chart_scope == 'global-fallback' %}
+        Showing system-wide comparison because no personal data exists yet.
+        {% elif chart_scope == 'personal' %}
+        Personal farmer comparison.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  {% if current_role == 'Farmer' and farmer_summary %}
+  <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Your Summary</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <p class="text-sm text-gray-600">Records</p>
+        <p class="text-2xl font-bold text-green-600">
+          {{ farmer_summary.records }}
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-600">Area (ha)</p>
+        <p class="text-2xl font-bold text-green-600">
+          {{ '%.1f'|format(farmer_summary.area) }}
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-600">Production (tons)</p>
+        <p class="text-2xl font-bold text-green-600">
+          {{ '%.1f'|format(farmer_summary.production) }}
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-600">Avg Yield/ha</p>
+        <p class="text-2xl font-bold text-green-600">
+          {{ '%.1f'|format(farmer_summary.avg_yield) }}
+        </p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div
+      class="px-6 py-4 border-b border-gray-200 flex justify-between items-center"
+    >
+      <h3 class="text-lg font-semibold text-gray-800">Recent Yield Records</h3>
+      <div class="text-right">
+        <p class="text-sm text-gray-500">
+          Latest year records: {{ latest_year_data_count }}
+        </p>
+        <p class="text-xs text-gray-400">Edit/Delete is in the rightmost column.</p>
       </div>
     </div>
 
-    <div class="action-row">
-      {% if current_role in ['Farmer', 'Admin'] %}
-      <a href="{{ url_for('main.add_yield') }}"
-        ><button>Add New Yield</button></a
-      >
-      {% endif %} {% if current_role in ['Officer', 'Admin'] %}
-      <a href="{{ url_for('analysis.analysis_page') }}"
-        ><button>Open Analysis</button></a
-      >
-      {% endif %} {% if current_role == 'Admin' %}
-      <a href="{{ url_for('main.list_crop_master') }}"
-        ><button>Manage Crops</button></a
-      >
-      <a href="{{ url_for('main.list_crop_types') }}"
-        ><button>Manage Crop Types</button></a
-      >
-      <a href="{{ url_for('main.list_seasons') }}"
-        ><button>Manage Seasons</button></a
-      >
-      <a href="{{ url_for('main.list_users') }}"
-        ><button>Manage Users</button></a
-      >
-      {% endif %}
-
-      <a href="{{ url_for('main.full_yield_report') }}"
-        ><button>Full Report</button></a
-      >
-    </div>
-
-    <div class="dashboard-metrics">
-      <p><strong>Total Records:</strong> {{ total_records }}</p>
-      <p>
-        <strong>Total Area Harvested (ha):</strong> {{ '%.2f'|format(total_area)
-        }}
-      </p>
-      <p>
-        <strong>Total Production (tons):</strong> {{
-        '%.2f'|format(total_production) }}
-      </p>
-      <p>
-        <strong>Average Yield per ha:</strong> {{
-        '%.2f'|format(avg_yield_per_ha) }}
-      </p>
-      <p>
-        <strong>Highest Producing Crop:</strong> {{ highest_crop.crop_name }}
-        ({{ '%.2f'|format(highest_crop.total_production) }})
-      </p>
-      <p>
-        <strong>Latest Year Data Count:</strong> {{ latest_year_data_count }}
-      </p>
-      {% if current_role == 'Farmer' and farmer_summary %}
-      <p><strong>Your Records:</strong> {{ farmer_summary.records }}</p>
-      <p>
-        <strong>Your Area (ha):</strong> {{ '%.2f'|format(farmer_summary.area)
-        }}
-      </p>
-      <p>
-        <strong>Your Production (tons):</strong> {{
-        '%.2f'|format(farmer_summary.production) }}
-      </p>
-      <p>
-        <strong>Your Avg Yield/ha:</strong> {{
-        '%.2f'|format(farmer_summary.avg_yield) }}
-      </p>
-      {% endif %}
-    </div>
-
-    <h2>Recent Yield Records</h2>
-    <table>
-      <thead>
-        <tr>
-          {% for col in columns %}
-          <th>{{ col }}</th>
-          {% endfor %} {% if current_role in ['Farmer', 'Admin'] %}
-          <th>Actions</th>
-          {% endif %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for record in yield_records %}
-        <tr>
-          {% for col in columns %}
-          <td>{{ record[col] }}</td>
-          {% endfor %} {% if current_role in ['Farmer', 'Admin'] %}
-          <td>
-            <a
-              href="{{ url_for('main.edit_yield', yield_id=record['yieldid']) }}"
-              >Edit</a
+    {% if yield_records %}
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            {% for col in columns %}
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
-            |
-            <form
-              method="POST"
-              action="{{ url_for('main.delete_yield', yield_id=record['yieldid']) }}"
-              style="display: inline"
-              onsubmit="
-                return confirm('Are you sure you want to delete this record?');
-              "
+              {{ col }}
+            </th>
+            {% endfor %} {% if current_role in ['Farmer', 'Admin'] %}
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider sticky right-0 bg-gray-50"
             >
-              <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-              />
-              <button type="submit">Delete</button>
-            </form>
-          </td>
-          {% endif %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </body>
-</html>
+              Actions
+            </th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for record in yield_records %}
+          <tr class="hover:bg-gray-50 transition">
+            {% for col in columns %}
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              {{ record[col] }}
+            </td>
+            {% endfor %} {% if current_role in ['Farmer', 'Admin'] %}
+            <td
+              class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 sticky right-0 bg-white"
+            >
+              <a
+                href="{{ url_for('main.edit_yield', yield_id=record['yieldid']) }}"
+                class="text-blue-600 hover:text-blue-800"
+                >Edit</a
+              >
+              <form
+                method="POST"
+                action="{{ url_for('main.delete_yield', yield_id=record['yieldid']) }}"
+                class="inline"
+                onsubmit="return confirm('Delete this record?');"
+              >
+                <input
+                  type="hidden"
+                  name="csrf_token"
+                  value="{{ csrf_token() }}"
+                />
+                <button type="submit" class="text-red-600 hover:text-red-800">
+                  Delete
+                </button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="px-6 py-10 text-center text-gray-500">
+      No yield records found.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const trendLabels = {{ dashboard_chart_data.trend_labels|tojson }};
+    const trendValues = {{ dashboard_chart_data.trend_values|tojson }};
+    const comparisonLabels = {{ dashboard_chart_data.comparison_labels|tojson }};
+    const comparisonValues = {{ dashboard_chart_data.comparison_values|tojson }};
+
+    const trendCtx = document
+      .getElementById("dashboardTrendChart")
+      .getContext("2d");
+    new Chart(trendCtx, {
+      type: "line",
+      data: {
+        labels: trendLabels,
+        datasets: [
+          {
+            label: "Production (tons)",
+            data: trendValues,
+            borderColor: "#10b981",
+            backgroundColor: "rgba(16, 185, 129, 0.1)",
+            tension: 0.4,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+
+    const comparisonCtx = document
+      .getElementById("dashboardComparisonChart")
+      .getContext("2d");
+    new Chart(comparisonCtx, {
+      type: "bar",
+      data: {
+        labels: comparisonLabels,
+        datasets: [
+          {
+            label: "Production (tons)",
+            data: comparisonValues,
+            backgroundColor: [
+              "#10b981",
+              "#3b82f6",
+              "#f59e0b",
+              "#ef4444",
+              "#8b5cf6",
+            ],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+  });
+</script>
+{% endblock %}

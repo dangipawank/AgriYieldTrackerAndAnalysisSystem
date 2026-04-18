@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Agri-Yield Tracker & Analysis System{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block page_subtitle %}Create and manage system users with different roles{% endblock %}
+
+{% block content %}
+{% set field_errors = errors if errors is defined else {} %}
+<div class="max-w-6xl space-y-6">
+    
+    <div class="bg-white rounded-lg shadow p-8">
+        <div class="mb-6 pb-6 border-b border-gray-200">
+            <h3 class="text-xl font-bold text-gray-800">Add New User</h3>
+            <p class="text-sm text-gray-600 mt-1">Create a new user account with assigned role</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.add_user_admin') }}" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div>
+                    <label for="username" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Username <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="username" id="username" value="{{ form_data.get('username', '') }}" 
+                        placeholder="john_doe" required
+                        class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+                    {% if field_errors.get('username') %}
+                    <p class="mt-2 text-sm text-red-600">{{ field_errors.username }}</p>
+                    {% endif %}
+                </div>
+
+                
+                <div>
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Email Address <span class="text-red-500">*</span>
+                    </label>
+                    <input type="email" name="email" id="email" value="{{ form_data.get('email', '') }}" 
+                        placeholder="john@example.com" required
+                        class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+                    {% if field_errors.get('email') %}
+                    <p class="mt-2 text-sm text-red-600">{{ field_errors.email }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-4">
+                    Role Assignment <span class="text-red-500">*</span>
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <label class="relative flex cursor-pointer p-4 border-2 border-gray-300 rounded-lg hover:border-green-500 transition">
+                        <input type="radio" name="role" value="Admin" 
+                            {% if form_data.get('role') == 'Admin' %}checked{% endif %}
+                            class="w-4 h-4 text-green-600" required />
+                        <div class="ml-3 flex-1">
+                            <p class="font-semibold text-gray-800">Admin</p>
+                            <p class="text-xs text-gray-600">Full system access, can manage all data</p>
+                        </div>
+                    </label>
+
+                    
+                    <label class="relative flex cursor-pointer p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 transition">
+                        <input type="radio" name="role" value="Officer" 
+                            {% if form_data.get('role') == 'Officer' %}checked{% endif %}
+                            class="w-4 h-4 text-blue-600" required />
+                        <div class="ml-3 flex-1">
+                            <p class="font-semibold text-gray-800">Officer</p>
+                            <p class="text-xs text-gray-600">Read-only access, can view reports</p>
+                        </div>
+                    </label>
+
+                    
+                    <label class="relative flex cursor-pointer p-4 border-2 border-gray-300 rounded-lg hover:border-orange-500 transition">
+                        <input type="radio" name="role" value="Farmer" 
+                            {% if form_data.get('role') == 'Farmer' %}checked{% endif %}
+                            class="w-4 h-4 text-orange-600" required />
+                        <div class="ml-3 flex-1">
+                            <p class="font-semibold text-gray-800">Farmer</p>
+                            <p class="text-xs text-gray-600">Own records only, limited access</p>
+                        </div>
+                    </label>
+                </div>
+                {% if field_errors.get('role') %}
+                <p class="mt-2 text-sm text-red-600">{{ field_errors.role }}</p>
+                {% endif %}
+            </div>
+
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Password <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password" name="password" id="password" 
+                        placeholder="At least 8 characters" required
+                        class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+                    <p class="text-xs text-gray-500 mt-1">Must be at least 8 characters long</p>
+                    {% if field_errors.get('password') %}
+                    <p class="mt-2 text-sm text-red-600">{{ field_errors.password }}</p>
+                    {% endif %}
+                </div>
+
+                
+                <div>
+                    <label for="confirm_password" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Confirm Password <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password" name="confirm_password" id="confirm_password" 
+                        placeholder="Repeat password" required
+                        class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+                    <p class="text-xs text-gray-500 mt-1">Must match password above</p>
+                    {% if field_errors.get('confirm_password') %}
+                    <p class="mt-2 text-sm text-red-600">{{ field_errors.confirm_password }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            
+            {% if field_errors|length > 0 %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-sm font-semibold text-red-700 mb-2">Please fix the following errors:</p>
+                <ul class="list-disc list-inside space-y-1 text-sm text-red-600">
+                    {% for error in field_errors.values() %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            
+            <div class="flex gap-4 pt-6 border-t border-gray-200">
+                <button type="submit" class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">
+                    Create User
+                </button>
+                <a href="{{ url_for('main.list_users') }}" class="flex-1 px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow p-6 border-l-4 border-blue-500">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Role Permissions Reference</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="bg-white rounded p-4">
+                <p class="font-semibold text-gray-800 mb-3">Admin</p>
+                <ul class="space-y-2 text-sm text-gray-700">
+                    <li class="flex items-start">Manage all users</li>
+                    <li class="flex items-start">Add/edit crops, seasons</li>
+                    <li class="flex items-start">View all yield data</li>
+                    <li class="flex items-start">Generate reports</li>
+                    <li class="flex items-start">Access analytics</li>
+                </ul>
+            </div>
+
+            
+            <div class="bg-white rounded p-4">
+                <p class="font-semibold text-gray-800 mb-3">Officer</p>
+                <ul class="space-y-2 text-sm text-gray-700">
+                    <li class="flex items-start">View all yield data</li>
+                    <li class="flex items-start">Generate reports</li>
+                    <li class="flex items-start">Access analytics</li>
+                    <li class="flex items-start">Cannot add/edit data</li>
+                    <li class="flex items-start">Cannot manage users</li>
+                </ul>
+            </div>
+
+            
+            <div class="bg-white rounded p-4">
+                <p class="font-semibold text-gray-800 mb-3">Farmer</p>
+                <ul class="space-y-2 text-sm text-gray-700">
+                    <li class="flex items-start">Add own yield data</li>
+                    <li class="flex items-start">Edit own records</li>
+                    <li class="flex items-start">View personal data</li>
+                    <li class="flex items-start">Cannot manage master data</li>
+                    <li class="flex items-start">Cannot access analytics</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

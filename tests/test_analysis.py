@@ -1,4 +1,4 @@
-﻿from services import yield_service
+from services import yield_service
 
 
 def test_get_trend_data_shape(monkeypatch):

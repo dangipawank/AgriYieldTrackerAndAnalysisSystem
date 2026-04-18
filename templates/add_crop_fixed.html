@@ -1,56 +1,60 @@
-﻿<!doctype html>
-<html>
-  <head>
-    <title>Add Master Crop</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-  </head>
-  <body>
-    <h1>Add Master Crop</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %} {% for category, message in messages %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %} {% endif %} {% endwith %}
+﻿{% extends "base.html" %}
 
-    <form method="POST" action="{{ url_for('main.add_crop_master') }}">
+{% block title %}Add Crop - Agri-Yield Tracker & Analysis System{% endblock %}
+{% block page_title %}Add Crop{% endblock %}
+{% block page_subtitle %}Create a crop master record{% endblock %}
+
+{% block content %}
+{% set field_errors = field_errors if field_errors is defined else {} %}
+<div class="max-w-4xl space-y-6 mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-t-4 border-t-green-500">
+      <p class="text-gray-600 text-sm font-semibold">Crop master</p>
+      <p class="text-2xl font-bold text-gray-900 mt-2">New entry</p>
+      <p class="text-xs text-gray-500 mt-2">Link each crop to a valid type</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-t-4 border-t-blue-500">
+      <p class="text-gray-600 text-sm font-semibold">Data quality</p>
+      <p class="text-2xl font-bold text-gray-900 mt-2">Important</p>
+      <p class="text-xs text-gray-500 mt-2">Crop names power reports and analytics</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
+    <div class="mb-6 pb-6 border-b border-gray-200">
+      <h3 class="text-xl font-bold text-gray-800">Add New Crop</h3>
+      <p class="text-sm text-gray-600 mt-1">Link the crop to an existing crop type</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.add_crop_master') }}" class="space-y-6">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <label for="crop_name">Crop Name:</label>
-      <input
-        type="text"
-        id="crop_name"
-        name="crop_name"
-        value="{{ form_data.crop_name if form_data else '' }}"
-      />
-      {% if field_errors and field_errors.get('crop_name') %}
-      <div class="field-error">{{ field_errors.get('crop_name') }}</div>
-      {% endif %} <br /><br />
 
-      <label for="croptype">Crop Type:</label>
-      <select id="croptype" name="croptype_id">
-        <option value="">-- Select Crop Type --</option>
-        {% for ct in crop_types %}
-        <option value="{{ ct.croptypeid }}">{{ ct.croptypename }}</option>
-        {% endfor %}
-      </select>
-      {% if field_errors and field_errors.get('croptype_id') %}
-      <div class="field-error">{{ field_errors.get('croptype_id') }}</div>
-      {% endif %} <br /><br />
+      <div>
+        <label for="crop_name" class="block text-sm font-semibold text-gray-700 mb-2">Crop Name <span class="text-red-500">*</span></label>
+        <input type="text" id="crop_name" name="crop_name" value="{{ form_data.get('crop_name', '') }}" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500" />
+        {% if field_errors.get('crop_name') %}
+        <p class="mt-2 text-sm text-red-600">{{ field_errors.get('crop_name') }}</p>
+        {% endif %}
+      </div>
 
-      <button type="submit">Add Crop</button>
+      <div>
+        <label for="croptype" class="block text-sm font-semibold text-gray-700 mb-2">Crop Type <span class="text-red-500">*</span></label>
+        <select id="croptype" name="croptype_id" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+          <option value="">-- Select Crop Type --</option>
+          {% for ct in crop_types %}
+          <option value="{{ ct.croptypeid }}" {% if form_data.get('croptype_id')|string == ct.croptypeid|string %}selected{% endif %}>{{ ct.croptypename }}</option>
+          {% endfor %}
+        </select>
+        {% if field_errors.get('croptype_id') %}
+        <p class="mt-2 text-sm text-red-600">{{ field_errors.get('croptype_id') }}</p>
+        {% endif %}
+      </div>
+
+      <div class="flex gap-4 pt-6 border-t border-gray-200">
+        <button type="submit" class="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">Add Crop</button>
+        <a href="{{ url_for('main.list_crop_master') }}" class="flex-1 px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded-lg transition text-center">Cancel</a>
+      </div>
     </form>
-
-    <script>
-      const selectedCropType =
-        "{{ form_data.croptype_id if form_data else '' }}";
-      if (selectedCropType) {
-        document.getElementById("croptype").value = selectedCropType;
-      }
-    </script>
-
-    <br />
-    <a href="{{ url_for('main.list_crop_master') }}">View All Master Crops</a> |
-    <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
-  </body>
-</html>
+  </div>
+</div>
+{% endblock %}

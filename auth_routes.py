@@ -1,4 +1,4 @@
-﻿from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from services.auth_service import get_user_by_login, verify_password, update_user_last_seen
 from utils.security import login_required
 

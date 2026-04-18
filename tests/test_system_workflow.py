@@ -1,4 +1,4 @@
-﻿from app import create_app
+from app import create_app
 
 
 def test_login_add_report_export_workflow(monkeypatch):

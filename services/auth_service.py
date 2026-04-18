@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 import bcrypt
 from sqlalchemy import select, update
 

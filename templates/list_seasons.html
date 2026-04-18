@@ -1,63 +1,79 @@
-﻿<!doctype html>
-<html>
-  <head>
-    <title>Seasons</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-  </head>
-  <body>
-    <h1>Seasons</h1>
+﻿{% extends "base.html" %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %} {% for category, message in messages %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %} {% endif %} {% endwith %}
+{% block title %}Seasons - Agri-Yield Tracker{% endblock %}
+{% block page_title %}Seasons{% endblock %}
+{% block page_subtitle %}Manage seasonal categories used in yield records{% endblock %}
 
-    <a href="{{ url_for('main.add_season') }}"><button>Add Season</button></a>
-    <a href="{{ url_for('main.list_crop_types') }}"
-      ><button>Manage Crop Types</button></a
-    >
+{% block content %}
+{% set total = seasons|length %}
+<div class="space-y-6 max-w-7xl mx-auto">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-t-4 border-t-green-500">
+      <p class="text-gray-600 text-sm font-semibold">Total Seasons</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">{{ total }}</p>
+      <p class="text-xs text-gray-500 mt-2">Season definitions available</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-t-4 border-t-blue-500">
+      <p class="text-gray-600 text-sm font-semibold">Usage</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">Live</p>
+      <p class="text-xs text-gray-500 mt-2">Used in yield data entry</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-t-4 border-t-orange-500">
+      <p class="text-gray-600 text-sm font-semibold">Data Status</p>
+      <p class="text-3xl font-bold text-gray-900 mt-2">{{ 'Healthy' if seasons else 'Empty' }}</p>
+      <p class="text-xs text-gray-500 mt-2">Master seasonal registry</p>
+    </div>
+  </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Season Name</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s in seasons %}
-        <tr>
-          <td>{{ s.seasonid }}</td>
-          <td>{{ s.seasonname }}</td>
-          <td>
-            <a href="{{ url_for('main.edit_season', season_id=s.seasonid) }}"
-              >Edit</a
-            >
-            |
-            <form
-              method="POST"
-              action="{{ url_for('main.delete_season', season_id=s.seasonid) }}"
-              style="display: inline"
-              onsubmit="return confirm('Delete this season?');"
-            >
-              <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-              />
-              <button type="submit">Delete</button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 items-end">
+      <div>
+        <a href="{{ url_for('main.add_season') }}" class="flex items-center justify-center h-10 px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">+ Add Season</a>
+      </div>
+      <div>
+        <a href="{{ url_for('main.list_crop_types') }}" class="flex items-center justify-center h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">Manage Crop Types</a>
+      </div>
+    </div>
+  </div>
 
-    <br />
-    <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
-  </body>
-</html>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    {% if seasons %}
+    <div class="px-6 py-3 border-b border-gray-200 bg-gray-50/80 flex items-center justify-between">
+      <p class="text-xs font-semibold tracking-wide text-gray-600 uppercase">Season Records ({{ total }})</p>
+      <p class="text-xs text-gray-500">Edit or remove seasonal categories</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Season Name</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for s in seasons %}
+          <tr class="hover:bg-green-50/40 transition">
+            <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ s.seasonname }}</td>
+            <td class="px-6 py-4 text-sm">
+              <div class="flex items-center gap-2">
+                <a href="{{ url_for('main.edit_season', season_id=s.seasonid) }}" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100">Edit</a>
+                <form method="POST" action="{{ url_for('main.delete_season', season_id=s.seasonid) }}" class="inline" onsubmit="return confirm('Delete this season?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-12 text-center">
+      <p class="text-gray-600 mb-4">No seasons available.</p>
+      <a href="{{ url_for('main.add_season') }}" class="inline-block px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition">+ Add First Season</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
