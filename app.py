@@ -59,6 +59,7 @@ def create_app():
         init_database()
     except Exception as e:
         app.logger.error(f"Database initialization failed: {e}")
+        raise  # show real error in logs
 
     return app
 
