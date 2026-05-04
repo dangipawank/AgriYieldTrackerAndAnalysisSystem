@@ -1,75 +1,87 @@
-import logging
-import os
-from flask import Flask, render_template, request
+from sqlalchemy import text, select, insert
 
-from config import Config
-from routes import main
-from analysis_routes import analysis
-from auth_routes import auth
-from init_db import init_database
-from utils.security import (
-    ensure_csrf_token,
-    csrf_protect_request,
-    get_current_user
+from models import engine, metadata, users, season_master
+from services.auth_service import (
+    hash_password,
+    ROLE_ADMIN,
+    ROLE_FARMER,
+    ROLE_OFFICER
 )
 
 
-def create_app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
+def init_database():
+    # Create all tables
+    metadata.create_all(engine)
 
-    # ---------------- Logging ----------------
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-        handlers=[logging.StreamHandler()],
+    alter_statements = [
+        "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS created_by INTEGER NULL",
+        "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS updated_by INTEGER NULL",
+        "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()",
+        "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now()",
+        "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS created_by INTEGER NULL",
+        "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS updated_by INTEGER NULL",
+        "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()",
+        "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now()",
+    ]
+
+    # IMPORTANT: safe transaction block
+    with engine.begin() as conn:
+
+        # Run schema updates
+        for statement in alter_statements:
+            conn.execute(text(statement))
+
+        # FIXED: proper row count check
+        season_count = conn.execute(select(season_master)).fetchall()
+        if len(season_count) == 0:
+            conn.execute(insert(season_master).values(seasonname="Spring"))
+            conn.execute(insert(season_master).values(seasonname="Summer"))
+            conn.execute(insert(season_master).values(seasonname="Winter"))
+
+        default_users = [
+            {
+                "username": "admin",
+                "email": "admin@agri.local",
+                "password": "admin123",
+                "role": ROLE_ADMIN,
+            },
+            {
+                "username": "officer",
+                "email": "officer@agri.local",
+                "password": "officer123",
+                "role": ROLE_OFFICER,
+            },
+            {
+                "username": "farmer",
+                "email": "farmer@agri.local",
+                "password": "farmer123",
+                "role": ROLE_FARMER,
+            },
+        ]
+
+        for user_item in default_users:
+            existing_user = conn.execute(
+                select(users).where(
+                    (users.c.username == user_item["username"]) |
+                    (users.c.email == user_item["email"])
+                )
+            ).mappings().first()
+
+            if not existing_user:
+                conn.execute(
+                    insert(users).values(
+                        username=user_item["username"],
+                        email=user_item["email"],
+                        password_hash=hash_password(user_item["password"]),
+                        role=user_item["role"],
+                    )
+                )
+
+    print(
+        "Database initialized successfully. "
+        "Default logins: admin/admin123, officer/officer123, farmer/farmer123"
     )
 
-    # ---------------- Context Processor ----------------
-    @app.context_processor
-    def inject_globals():
-        user = get_current_user()
-        return {
-            "csrf_token": ensure_csrf_token,
-            "current_user": user,
-            "current_role": user.get("role") if user else None,
-        }
-
-    # ---------------- CSRF Protection ----------------
-    @app.before_request
-    def before_request():
-        csrf_protect_request()
-
-    # ---------------- Error Handlers ----------------
-    @app.errorhandler(404)
-    def not_found(error):
-        return render_template("404.html"), 404
-
-    @app.errorhandler(500)
-    def server_error(error):
-        return render_template("500.html"), 500
-
-    # ---------------- Blueprints ----------------
-    app.register_blueprint(auth)
-    app.register_blueprint(main)
-    app.register_blueprint(analysis)
-
-    # ---------------- INIT DB ROUTE (SAFE) ----------------
-    @app.route("/init-db")
-    def init_db_route():
-        key = request.args.get("key")
-
-        if key != os.environ.get("INIT_KEY"):
-            return "Unauthorized", 403
-
-        init_database()
-        return "Database initialized successfully"
-
-    return app
-
-
-# ---------------- ENTRY POINT ----------------
-app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    init_database()
