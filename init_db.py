@@ -1,12 +1,16 @@
 from sqlalchemy import text, select, insert
 
 from models import engine, metadata, users, season_master
-from services.auth_service import hash_password, ROLE_ADMIN, ROLE_FARMER, ROLE_OFFICER
-
-
+from services.auth_service import (
+    hash_password,
+    ROLE_ADMIN,
+    ROLE_FARMER,
+    ROLE_OFFICER
+)
 
 
 def init_database():
+    # Create all tables
     metadata.create_all(engine)
 
     alter_statements = [
@@ -20,12 +24,16 @@ def init_database():
         "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now()",
     ]
 
-    with engine.connect() as conn:
+    # IMPORTANT: safe transaction block
+    with engine.begin() as conn:
+
+        # Run schema updates
         for statement in alter_statements:
             conn.execute(text(statement))
 
-        season_count = conn.execute(select(text("count(*)")).select_from(season_master)).scalar() or 0
-        if season_count == 0:
+        # FIXED: proper row count check
+        season_count = conn.execute(select(season_master)).fetchall()
+        if len(season_count) == 0:
             conn.execute(insert(season_master).values(seasonname="Spring"))
             conn.execute(insert(season_master).values(seasonname="Summer"))
             conn.execute(insert(season_master).values(seasonname="Winter"))
@@ -54,9 +62,11 @@ def init_database():
         for user_item in default_users:
             existing_user = conn.execute(
                 select(users).where(
-                    (users.c.username == user_item["username"]) | (users.c.email == user_item["email"])
+                    (users.c.username == user_item["username"]) |
+                    (users.c.email == user_item["email"])
                 )
             ).mappings().first()
+
             if not existing_user:
                 conn.execute(
                     insert(users).values(
@@ -66,10 +76,9 @@ def init_database():
                         role=user_item["role"],
                     )
                 )
-        conn.commit()
 
     print(
-        "Database tables initialized successfully. "
+        "Database initialized successfully. "
         "Default logins: admin/admin123, officer/officer123, farmer/farmer123"
     )
 
