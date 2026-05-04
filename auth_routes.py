@@ -40,6 +40,7 @@ def login():
 def register():
     flash("Public registration is disabled. Please contact Admin.", "danger")
     return redirect(url_for("auth.login"))
+    
 
 
 @auth.route("/logout", methods=["POST"])

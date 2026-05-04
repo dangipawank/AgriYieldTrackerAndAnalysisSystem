@@ -1,15 +1,18 @@
 import logging
-from flask import Flask, render_template
+import os
+from flask import Flask, render_template, request
 
 from config import Config
 from routes import main
 from analysis_routes import analysis
 from auth_routes import auth
+from init_db import init_database
 from utils.security import (
     ensure_csrf_token,
     csrf_protect_request,
     get_current_user
 )
+
 
 def create_app():
     app = Flask(__name__)
@@ -51,14 +54,22 @@ def create_app():
     app.register_blueprint(main)
     app.register_blueprint(analysis)
 
+    # ---------------- INIT DB ROUTE (SAFE) ----------------
+    @app.route("/init-db")
+    def init_db_route():
+        key = request.args.get("key")
+
+        if key != os.environ.get("INIT_KEY"):
+            return "Unauthorized", 403
+
+        init_database()
+        return "Database initialized successfully"
+
     return app
 
 
-# ======================================================
-# IMPORTANT: Gunicorn entry point
-# ======================================================
+# ---------------- ENTRY POINT ----------------
 app = create_app()
 
-# Local development only
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
