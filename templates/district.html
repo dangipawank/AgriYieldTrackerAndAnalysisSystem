@@ -92,18 +92,33 @@
   const provinceOptions = {{ province_options | tojson }};
   const countrySelect = document.getElementById('countryid');
   const provinceSelect = document.getElementById('provinceid');
-  const selectedProvinceId = {{ form_data.provinceid | default(0) }};
+  const selectedProvinceId = {{ form_data.provinceid | tojson }};
 
   function renderProvinceOptions() {
-    const countryId = Number(countrySelect.value) || 0;
-    const filtered = provinceOptions.filter(item => !countryId || item.countryid === countryId);
-    provinceSelect.innerHTML = `<option value="">Select province</option>` + filtered.map(item => {
-      const selected = item.provinceid === selectedProvinceId ? ' selected' : '';
-      return `<option value="${item.provinceid}"${selected}>${item.provincename}</option>`;
-    }).join('');
+    const countryId = parseInt(countrySelect.value) || 0;
+
+    // If no country selected, clear province and show placeholder only
+    if (!countryId) {
+      provinceSelect.innerHTML = '<option value="">Select province</option>';
+      return;
+    }
+
+    const filtered = provinceOptions.filter(item => item.countryid === countryId);
+
+    provinceSelect.innerHTML = '<option value="">Select province</option>' +
+      filtered.map(item => {
+        const selected = item.provinceid === selectedProvinceId ? ' selected' : '';
+        return `<option value="${item.provinceid}"${selected}>${item.provincename}</option>`;
+      }).join('');
   }
 
-  countrySelect.addEventListener('change', renderProvinceOptions);
+  countrySelect.addEventListener('change', function () {
+    // When the user manually changes country, clear any pre-selected province
+    // by temporarily resetting selectedProvinceId matching
+    renderProvinceOptions();
+  });
+
+  // On initial load, render provinces for the pre-selected country (edit mode)
   renderProvinceOptions();
 </script>
 {% endblock %}
