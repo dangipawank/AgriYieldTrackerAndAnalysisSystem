@@ -3,6 +3,7 @@
 A Flask-based web application for agricultural yield tracking, analysis, reporting, and role-based management.
 
 ## Features
+
 - Role-based authentication (`Admin`, `Officer`, `Farmer`)
 - Yield data CRUD with ownership controls
 - Master data management (crops, crop types, seasons)
@@ -11,6 +12,7 @@ A Flask-based web application for agricultural yield tracking, analysis, reporti
 - CSRF protection and audit logging
 
 ## Tech Stack
+
 - Python, Flask
 - SQLAlchemy
 - PostgreSQL (`psycopg2`)
@@ -18,6 +20,7 @@ A Flask-based web application for agricultural yield tracking, analysis, reporti
 - Pytest
 
 ## Project Structure
+
 - `app.py` - Flask app factory/bootstrap
 - `routes.py` - Main application routes
 - `auth_routes.py` - Authentication routes
@@ -28,6 +31,7 @@ A Flask-based web application for agricultural yield tracking, analysis, reporti
 - `tests/` - Test suite
 
 ## Setup
+
 1. Create virtual environment:
    ```bash
    python -m venv venv
@@ -60,15 +64,36 @@ A Flask-based web application for agricultural yield tracking, analysis, reporti
    - `http://127.0.0.1:5000/login`
 
 ## Default Accounts (after `init_db.py`)
+
 - `admin / admin123`
 - `officer / officer123`
 - `farmer / farmer123`
 
 ## Tests
+
 ```bash
 python -m pytest -q
 ```
 
 ## Notes
+
 - This repository is prepared for GitHub push with a single root documentation file (`README.md`).
 - Local environment/log/cache artifacts are excluded via `.gitignore`.
+
+## Deploy on Render
+
+1. Push your repository to GitHub.
+2. In Render, create a new Web Service and connect your GitHub repo.
+3. Use the root directory of this project.
+4. Render should detect Python and install dependencies from `requirements.txt`.
+5. Set the following environment variables in Render:
+   - `DATABASE_URL` (Render Postgres provides this automatically when you add a database)
+   - `SECRET_KEY` (the `render.yaml` file will generate one automatically if not set)
+6. The start command is:
+   ```bash
+   gunicorn "app:create_app()"
+   ```
+7. After deployment, visit the Render URL and log in with one of the default accounts:
+   - `admin / admin123`
+   - `officer / officer123`
+   - `farmer / farmer123`
