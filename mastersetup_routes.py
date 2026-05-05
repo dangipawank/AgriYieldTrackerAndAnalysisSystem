@@ -16,80 +16,99 @@ from utils.security import login_required, role_required
 mastersetup_bp = Blueprint("mastersetup", __name__)
 
 
+def _to_dict_list(result):
+    """Convert SQLAlchemy RowMapping results to list of plain dicts for JSON serialization."""
+    return [dict(row) for row in result]
+
+
 def _load_countries(conn):
-    return conn.execute(select(country).order_by(country.c.countryname)).mappings().all()
+    return _to_dict_list(
+        conn.execute(select(country).order_by(country.c.countryname)).mappings().all()
+    )
 
 
 def _load_provinces(conn):
-    return conn.execute(
-        select(province.c.provinceid, province.c.provincename, province.c.countryid)
-        .order_by(province.c.provincename)
-    ).mappings().all()
+    return _to_dict_list(
+        conn.execute(
+            select(province.c.provinceid, province.c.provincename, province.c.countryid)
+            .order_by(province.c.provincename)
+        ).mappings().all()
+    )
 
 
 def _load_provinces_with_country(conn):
-    return conn.execute(
-        select(
-            province.c.provinceid,
-            province.c.provincename,
-            province.c.countryid,
-            country.c.countryname,
-        )
-        .join(country, province.c.countryid == country.c.countryid)
-        .order_by(country.c.countryname, province.c.provincename)
-    ).mappings().all()
+    return _to_dict_list(
+        conn.execute(
+            select(
+                province.c.provinceid,
+                province.c.provincename,
+                province.c.countryid,
+                country.c.countryname,
+            )
+            .join(country, province.c.countryid == country.c.countryid)
+            .order_by(country.c.countryname, province.c.provincename)
+        ).mappings().all()
+    )
 
 
 def _load_districts(conn):
-    return conn.execute(
-        select(
-            district.c.districtid,
-            district.c.districtname,
-            district.c.provinceid,
-        )
-        .order_by(district.c.districtname)
-    ).mappings().all()
+    return _to_dict_list(
+        conn.execute(
+            select(
+                district.c.districtid,
+                district.c.districtname,
+                district.c.provinceid,
+            )
+            .order_by(district.c.districtname)
+        ).mappings().all()
+    )
 
 
 def _load_districts_with_hierarchy(conn):
-    return conn.execute(
-        select(
-            district.c.districtid,
-            district.c.districtname,
-            province.c.provinceid,
-            province.c.provincename,
-            country.c.countryname,
-        )
-        .join(province, district.c.provinceid == province.c.provinceid)
-        .join(country, province.c.countryid == country.c.countryid)
-        .order_by(country.c.countryname, province.c.provincename, district.c.districtname)
-    ).mappings().all()
+    return _to_dict_list(
+        conn.execute(
+            select(
+                district.c.districtid,
+                district.c.districtname,
+                province.c.provinceid,
+                province.c.provincename,
+                country.c.countryname,
+            )
+            .join(province, district.c.provinceid == province.c.provinceid)
+            .join(country, province.c.countryid == country.c.countryid)
+            .order_by(country.c.countryname, province.c.provincename, district.c.districtname)
+        ).mappings().all()
+    )
 
 
 def _load_municipality_types(conn):
-    return conn.execute(
-        select(municipalitytype).order_by(municipalitytype.c.MunicipalityTypeName)
-    ).mappings().all()
+    return _to_dict_list(
+        conn.execute(
+            select(municipalitytype).order_by(municipalitytype.c.MunicipalityTypeName)
+        ).mappings().all()
+    )
 
 
 def _load_municipalities_with_hierarchy(conn):
-    return conn.execute(
-        select(
-            municipality.c.municipalityid,
-            municipality.c.municipalityname,
-            municipality.c.districtid,
-            municipality.c.municipalitytypeid,
-            municipalitytype.c.MunicipalityTypeName,
-            district.c.districtname,
-            province.c.provincename,
-            country.c.countryname,
-        )
-        .join(municipalitytype, municipality.c.municipalitytypeid == municipalitytype.c.municipalitytypeid)
-        .join(district, municipality.c.districtid == district.c.districtid)
-        .join(province, district.c.provinceid == province.c.provinceid)
-        .join(country, province.c.countryid == country.c.countryid)
-        .order_by(country.c.countryname, province.c.provincename, district.c.districtname, municipality.c.municipalityname)
-    ).mappings().all()
+    return _to_dict_list(
+        conn.execute(
+            select(
+                municipality.c.municipalityid,
+                municipality.c.municipalityname,
+                municipality.c.districtid,
+                municipality.c.municipalitytypeid,
+                municipalitytype.c.MunicipalityTypeName,
+                district.c.districtname,
+                province.c.provincename,
+                country.c.countryname,
+            )
+            .join(municipalitytype, municipality.c.municipalitytypeid == municipalitytype.c.municipalitytypeid)
+            .join(district, municipality.c.districtid == district.c.districtid)
+            .join(province, district.c.provinceid == province.c.provinceid)
+            .join(country, province.c.countryid == country.c.countryid)
+            .order_by(country.c.countryname, province.c.provincename, district.c.districtname, municipality.c.municipalityname)
+        ).mappings().all()
+    )
 
 
 @mastersetup_bp.route("/master/country", methods=["GET", "POST"])

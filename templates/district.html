@@ -92,7 +92,7 @@
   const provinceOptions = {{ province_options | tojson }};
   const countrySelect = document.getElementById('countryid');
   const provinceSelect = document.getElementById('provinceid');
-  const selectedProvinceId = {{ form_data.provinceid or 0 }};
+  const selectedProvinceId = {{ form_data.provinceid | default(0) }};
 
   function renderProvinceOptions() {
     const countryId = Number(countrySelect.value) || 0;
