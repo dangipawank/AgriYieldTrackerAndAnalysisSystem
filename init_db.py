@@ -10,6 +10,10 @@ from services.auth_service import (
 
 
 def init_database():
+    # Create the mastersetup schema first
+    with engine.begin() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS mastersetup"))
+
     # Create all tables
     metadata.create_all(engine)
 
@@ -24,14 +28,11 @@ def init_database():
         "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now()",
     ]
 
-    # IMPORTANT: safe transaction block
     with engine.begin() as conn:
 
-        # Run schema updates
         for statement in alter_statements:
             conn.execute(text(statement))
 
-        # FIXED: proper row count check
         season_count = conn.execute(select(season_master)).fetchall()
         if len(season_count) == 0:
             conn.execute(insert(season_master).values(seasonname="Spring"))
@@ -39,24 +40,9 @@ def init_database():
             conn.execute(insert(season_master).values(seasonname="Winter"))
 
         default_users = [
-            {
-                "username": "admin",
-                "email": "admin@agri.local",
-                "password": "admin123",
-                "role": ROLE_ADMIN,
-            },
-            {
-                "username": "officer",
-                "email": "officer@agri.local",
-                "password": "officer123",
-                "role": ROLE_OFFICER,
-            },
-            {
-                "username": "farmer",
-                "email": "farmer@agri.local",
-                "password": "farmer123",
-                "role": ROLE_FARMER,
-            },
+            {"username": "admin", "email": "admin@agri.local", "password": "admin123", "role": ROLE_ADMIN},
+            {"username": "officer", "email": "officer@agri.local", "password": "officer123", "role": ROLE_OFFICER},
+            {"username": "farmer", "email": "farmer@agri.local", "password": "farmer123", "role": ROLE_FARMER},
         ]
 
         for user_item in default_users:
@@ -77,10 +63,7 @@ def init_database():
                     )
                 )
 
-    print(
-        "Database initialized successfully. "
-        "Default logins: admin/admin123, officer/officer123, farmer/farmer123"
-    )
+    print("Database initialized successfully. Default logins: admin/admin123, officer/officer123, farmer/farmer123")
 
 
 if __name__ == "__main__":
