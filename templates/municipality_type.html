@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Municipality Types - Admin{% endblock %}
+{% block page_title %}Municipality Types{% endblock %}
+{% block page_subtitle %}Manage municipality type master data.{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header">{{ "Edit Municipality Type" if edit_type else "Add Municipality Type" }}</div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('mastersetup.edit_municipality_type', type_id=edit_type.municipalitytypeid) if edit_type else url_for('mastersetup.manage_municipality_type') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <div class="row g-3 align-items-end">
+        <div class="col-md-9">
+          <label class="form-label" for="MunicipalityTypeName">Type Name</label>
+          <input id="MunicipalityTypeName" name="MunicipalityTypeName" type="text" class="form-control" value="{{ form_data.MunicipalityTypeName }}" />
+          {% if field_errors.MunicipalityTypeName %}
+          <div class="form-text text-danger">{{ field_errors.MunicipalityTypeName }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-3 text-end">
+          <button type="submit" class="btn btn-primary">{{ "Save Changes" if edit_type else "Add Type" }}</button>
+          {% if edit_type %}
+          <a href="{{ url_for('mastersetup.manage_municipality_type') }}" class="btn btn-secondary ms-2">Cancel</a>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">Municipality Types</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Type Name</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in municipality_types %}
+          <tr>
+            <td>{{ row.municipalitytypeid }}</td>
+            <td>{{ row.MunicipalityTypeName }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('mastersetup.edit_municipality_type', type_id=row.municipalitytypeid) }}" class="btn btn-sm btn-outline-primary me-2">Edit</a>
+              <form method="POST" action="{{ url_for('mastersetup.delete_municipality_type', type_id=row.municipalitytypeid) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this municipality type?');">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="text-center py-4">No municipality types found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

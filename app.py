@@ -6,6 +6,7 @@ from config import Config
 from routes import main
 from analysis_routes import analysis
 from auth_routes import auth
+from mastersetup_routes import mastersetup_bp
 from init_db import init_database
 from utils.security import (
     ensure_csrf_token,
@@ -53,6 +54,7 @@ def create_app():
     app.register_blueprint(auth)
     app.register_blueprint(main)
     app.register_blueprint(analysis)
+    app.register_blueprint(mastersetup_bp)
 
     # ---------------- Init DB on startup ----------------
     try:

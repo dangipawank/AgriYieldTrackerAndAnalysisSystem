@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Country Master - Admin{% endblock %}
+{% block page_title %}Country Master{% endblock %}
+{% block page_subtitle %}Manage countries for geographic master data.{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header">
+    {{ "Edit Country" if edit_country else "Add Country" }}
+  </div>
+  <div class="card-body">
+    <form method="POST" action="{{ url_for('mastersetup.edit_country', country_id=edit_country.countryid) if edit_country else url_for('mastersetup.manage_country') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <div class="row g-3 align-items-end">
+        <div class="col-md-8">
+          <label class="form-label" for="countryname">Country Name</label>
+          <input id="countryname" name="countryname" type="text" class="form-control" value="{{ form_data.countryname }}" />
+          {% if field_errors.countryname %}
+          <div class="form-text text-danger">{{ field_errors.countryname }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+          <button type="submit" class="btn btn-primary">{{ "Save Changes" if edit_country else "Add Country" }}</button>
+          {% if edit_country %}
+          <a href="{{ url_for('mastersetup.manage_country') }}" class="btn btn-secondary ms-2">Cancel</a>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">Country List</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Country Name</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in countries %}
+          <tr>
+            <td>{{ row.countryid }}</td>
+            <td>{{ row.countryname }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('mastersetup.edit_country', country_id=row.countryid) }}" class="btn btn-sm btn-outline-primary me-2">Edit</a>
+              <form method="POST" action="{{ url_for('mastersetup.delete_country', country_id=row.countryid) }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this country?');">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" class="text-center py-4">No countries available yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
