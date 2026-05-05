@@ -21,6 +21,11 @@ def _to_dict_list(result):
     return [dict(row) for row in result]
 
 
+def _to_dict(row):
+    """Convert a single SQLAlchemy RowMapping to a plain dict. Returns None if row is None."""
+    return dict(row) if row else None
+
+
 def _load_countries(conn):
     return _to_dict_list(
         conn.execute(select(country).order_by(country.c.countryname)).mappings().all()
@@ -111,6 +116,10 @@ def _load_municipalities_with_hierarchy(conn):
     )
 
 
+# ---------------------------------------------------------------------------
+# Country
+# ---------------------------------------------------------------------------
+
 @mastersetup_bp.route("/master/country", methods=["GET", "POST"])
 @login_required
 @role_required(ROLE_ADMIN)
@@ -161,18 +170,20 @@ def manage_country():
 @role_required(ROLE_ADMIN)
 def edit_country(country_id):
     field_errors = {}
-    edit_country = None
+    edit_country_row = None
     form_data = {"countryname": ""}
 
     with engine.begin() as conn:
-        edit_country = conn.execute(
-            select(country).where(country.c.countryid == country_id)
-        ).mappings().first()
-        if not edit_country:
+        edit_country_row = _to_dict(
+            conn.execute(
+                select(country).where(country.c.countryid == country_id)
+            ).mappings().first()
+        )
+        if not edit_country_row:
             flash("Country not found.", "danger")
             return redirect(url_for("mastersetup.manage_country"))
 
-        form_data["countryname"] = edit_country["countryname"]
+        form_data["countryname"] = edit_country_row["countryname"]
 
         if request.method == "POST":
             form_data["countryname"] = request.form.get("countryname", "").strip()
@@ -204,7 +215,7 @@ def edit_country(country_id):
         countries=countries,
         form_data=form_data,
         field_errors=field_errors,
-        edit_country=edit_country,
+        edit_country=edit_country_row,
     )
 
 
@@ -226,25 +237,16 @@ def delete_country(country_id):
     return redirect(url_for("mastersetup.manage_country"))
 
 
+# ---------------------------------------------------------------------------
+# Province
+# ---------------------------------------------------------------------------
+
 @mastersetup_bp.route("/master/province", methods=["GET", "POST"])
 @login_required
 @role_required(ROLE_ADMIN)
 def manage_province():
     field_errors = {}
     form_data = {"countryid": None, "provincename": ""}
-
-    with engine.connect() as conn:
-        country_options = _load_countries(conn)
-        province_rows = conn.execute(
-            select(
-                province.c.provinceid,
-                province.c.provincename,
-                country.c.countryid,
-                country.c.countryname,
-            )
-            .join(country, province.c.countryid == country.c.countryid)
-            .order_by(country.c.countryname, province.c.provincename)
-        ).mappings().all()
 
     if request.method == "POST":
         form_data["countryid"] = request.form.get("countryid", type=int)
@@ -278,6 +280,10 @@ def manage_province():
             except Exception as exc:
                 field_errors["provincename"] = f"Unable to add province: {exc}"
 
+    with engine.connect() as conn:
+        country_options = _load_countries(conn)
+        province_rows = _load_provinces_with_country(conn)
+
     return render_template(
         "province.html",
         province_rows=province_rows,
@@ -293,19 +299,21 @@ def manage_province():
 @role_required(ROLE_ADMIN)
 def edit_province(province_id):
     field_errors = {}
-    edit_province = None
+    edit_province_row = None
     form_data = {"countryid": None, "provincename": ""}
 
     with engine.begin() as conn:
-        edit_province = conn.execute(
-            select(province).where(province.c.provinceid == province_id)
-        ).mappings().first()
-        if not edit_province:
+        edit_province_row = _to_dict(
+            conn.execute(
+                select(province).where(province.c.provinceid == province_id)
+            ).mappings().first()
+        )
+        if not edit_province_row:
             flash("Province not found.", "danger")
             return redirect(url_for("mastersetup.manage_province"))
 
-        form_data["countryid"] = edit_province["countryid"]
-        form_data["provincename"] = edit_province["provincename"]
+        form_data["countryid"] = edit_province_row["countryid"]
+        form_data["provincename"] = edit_province_row["provincename"]
 
         if request.method == "POST":
             form_data["countryid"] = request.form.get("countryid", type=int)
@@ -338,16 +346,7 @@ def edit_province(province_id):
 
     with engine.connect() as conn:
         country_options = _load_countries(conn)
-        province_rows = conn.execute(
-            select(
-                province.c.provinceid,
-                province.c.provincename,
-                country.c.countryid,
-                country.c.countryname,
-            )
-            .join(country, province.c.countryid == country.c.countryid)
-            .order_by(country.c.countryname, province.c.provincename)
-        ).mappings().all()
+        province_rows = _load_provinces_with_country(conn)
 
     return render_template(
         "province.html",
@@ -355,7 +354,7 @@ def edit_province(province_id):
         country_options=country_options,
         form_data=form_data,
         field_errors=field_errors,
-        edit_province=edit_province,
+        edit_province=edit_province_row,
     )
 
 
@@ -377,17 +376,16 @@ def delete_province(province_id):
     return redirect(url_for("mastersetup.manage_province"))
 
 
+# ---------------------------------------------------------------------------
+# District
+# ---------------------------------------------------------------------------
+
 @mastersetup_bp.route("/master/district", methods=["GET", "POST"])
 @login_required
 @role_required(ROLE_ADMIN)
 def manage_district():
     field_errors = {}
     form_data = {"countryid": None, "provinceid": None, "districtname": ""}
-
-    with engine.connect() as conn:
-        country_options = _load_countries(conn)
-        province_options = _load_provinces(conn)
-        district_rows = _load_districts_with_hierarchy(conn)
 
     if request.method == "POST":
         form_data["countryid"] = request.form.get("countryid", type=int)
@@ -425,6 +423,11 @@ def manage_district():
             except Exception as exc:
                 field_errors["districtname"] = f"Unable to add district: {exc}"
 
+    with engine.connect() as conn:
+        country_options = _load_countries(conn)
+        province_options = _load_provinces(conn)
+        district_rows = _load_districts_with_hierarchy(conn)
+
     return render_template(
         "district.html",
         district_rows=district_rows,
@@ -441,23 +444,27 @@ def manage_district():
 @role_required(ROLE_ADMIN)
 def edit_district(district_id):
     field_errors = {}
-    edit_district = None
+    edit_district_row = None
     form_data = {"countryid": None, "provinceid": None, "districtname": ""}
 
     with engine.begin() as conn:
-        edit_district = conn.execute(
-            select(district).where(district.c.districtid == district_id)
-        ).mappings().first()
-        if not edit_district:
+        edit_district_row = _to_dict(
+            conn.execute(
+                select(district).where(district.c.districtid == district_id)
+            ).mappings().first()
+        )
+        if not edit_district_row:
             flash("District not found.", "danger")
             return redirect(url_for("mastersetup.manage_district"))
 
-        province_row = conn.execute(
-            select(province).where(province.c.provinceid == edit_district["provinceid"])
-        ).mappings().first()
-        form_data["provinceid"] = edit_district["provinceid"]
+        province_row = _to_dict(
+            conn.execute(
+                select(province).where(province.c.provinceid == edit_district_row["provinceid"])
+            ).mappings().first()
+        )
+        form_data["provinceid"] = edit_district_row["provinceid"]
         form_data["countryid"] = province_row["countryid"] if province_row else None
-        form_data["districtname"] = edit_district["districtname"]
+        form_data["districtname"] = edit_district_row["districtname"]
 
         if request.method == "POST":
             form_data["countryid"] = request.form.get("countryid", type=int)
@@ -504,7 +511,7 @@ def edit_district(district_id):
         province_options=province_options,
         form_data=form_data,
         field_errors=field_errors,
-        edit_district=edit_district,
+        edit_district=edit_district_row,
     )
 
 
@@ -525,6 +532,10 @@ def delete_district(district_id):
 
     return redirect(url_for("mastersetup.manage_district"))
 
+
+# ---------------------------------------------------------------------------
+# Municipality Type
+# ---------------------------------------------------------------------------
 
 @mastersetup_bp.route("/master/municipality-type", methods=["GET", "POST"])
 @login_required
@@ -578,18 +589,20 @@ def manage_municipality_type():
 @role_required(ROLE_ADMIN)
 def edit_municipality_type(type_id):
     field_errors = {}
-    edit_type = None
+    edit_type_row = None
     form_data = {"MunicipalityTypeName": ""}
 
     with engine.begin() as conn:
-        edit_type = conn.execute(
-            select(municipalitytype).where(municipalitytype.c.municipalitytypeid == type_id)
-        ).mappings().first()
-        if not edit_type:
+        edit_type_row = _to_dict(
+            conn.execute(
+                select(municipalitytype).where(municipalitytype.c.municipalitytypeid == type_id)
+            ).mappings().first()
+        )
+        if not edit_type_row:
             flash("Municipality type not found.", "danger")
             return redirect(url_for("mastersetup.manage_municipality_type"))
 
-        form_data["MunicipalityTypeName"] = edit_type["MunicipalityTypeName"]
+        form_data["MunicipalityTypeName"] = edit_type_row["MunicipalityTypeName"]
 
         if request.method == "POST":
             form_data["MunicipalityTypeName"] = request.form.get("MunicipalityTypeName", "").strip()
@@ -621,7 +634,7 @@ def edit_municipality_type(type_id):
         municipality_types=municipality_types,
         form_data=form_data,
         field_errors=field_errors,
-        edit_type=edit_type,
+        edit_type=edit_type_row,
     )
 
 
@@ -643,17 +656,16 @@ def delete_municipality_type(type_id):
     return redirect(url_for("mastersetup.manage_municipality_type"))
 
 
+# ---------------------------------------------------------------------------
+# Municipality
+# ---------------------------------------------------------------------------
+
 @mastersetup_bp.route("/master/municipality", methods=["GET", "POST"])
 @login_required
 @role_required(ROLE_ADMIN)
 def manage_municipality():
     field_errors = {}
     form_data = {"districtid": None, "municipalitytypeid": None, "municipalityname": ""}
-
-    with engine.connect() as conn:
-        district_options = _load_districts_with_hierarchy(conn)
-        municipality_type_options = _load_municipality_types(conn)
-        municipality_rows = _load_municipalities_with_hierarchy(conn)
 
     if request.method == "POST":
         form_data["districtid"] = request.form.get("districtid", type=int)
@@ -693,6 +705,11 @@ def manage_municipality():
             except Exception as exc:
                 field_errors["municipalityname"] = f"Unable to add municipality: {exc}"
 
+    with engine.connect() as conn:
+        district_options = _load_districts_with_hierarchy(conn)
+        municipality_type_options = _load_municipality_types(conn)
+        municipality_rows = _load_municipalities_with_hierarchy(conn)
+
     return render_template(
         "municipality.html",
         municipality_rows=municipality_rows,
@@ -709,20 +726,22 @@ def manage_municipality():
 @role_required(ROLE_ADMIN)
 def edit_municipality(municipality_id):
     field_errors = {}
-    edit_municipality = None
+    edit_municipality_row = None
     form_data = {"districtid": None, "municipalitytypeid": None, "municipalityname": ""}
 
     with engine.begin() as conn:
-        edit_municipality = conn.execute(
-            select(municipality).where(municipality.c.municipalityid == municipality_id)
-        ).mappings().first()
-        if not edit_municipality:
+        edit_municipality_row = _to_dict(
+            conn.execute(
+                select(municipality).where(municipality.c.municipalityid == municipality_id)
+            ).mappings().first()
+        )
+        if not edit_municipality_row:
             flash("Municipality not found.", "danger")
             return redirect(url_for("mastersetup.manage_municipality"))
 
-        form_data["districtid"] = edit_municipality["districtid"]
-        form_data["municipalitytypeid"] = edit_municipality["municipalitytypeid"]
-        form_data["municipalityname"] = edit_municipality["municipalityname"]
+        form_data["districtid"] = edit_municipality_row["districtid"]
+        form_data["municipalitytypeid"] = edit_municipality_row["municipalitytypeid"]
+        form_data["municipalityname"] = edit_municipality_row["municipalityname"]
 
         if request.method == "POST":
             form_data["districtid"] = request.form.get("districtid", type=int)
@@ -771,7 +790,7 @@ def edit_municipality(municipality_id):
         municipality_type_options=municipality_type_options,
         form_data=form_data,
         field_errors=field_errors,
-        edit_municipality=edit_municipality,
+        edit_municipality=edit_municipality_row,
     )
 
 

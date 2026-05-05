@@ -8,7 +8,7 @@
 <div class="card mb-4">
   <div class="card-header">{{ "Edit District" if edit_district else "Add District" }}</div>
   <div class="card-body">
-    <form method="POST" action="{{ url_for('mastersetup.edit_district', district_id=edit_district.districtid) if edit_district else url_for('mastersetup.manage_district') }}">
+    <form method="POST" action="{{ url_for('mastersetup.edit_district', district_id=edit_district['districtid']) if edit_district else url_for('mastersetup.manage_district') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <div class="row g-3">
         <div class="col-md-3">
@@ -16,7 +16,7 @@
           <select id="countryid" name="countryid" class="form-select">
             <option value="">Select country</option>
             {% for item in country_options %}
-            <option value="{{ item.countryid }}" {% if item.countryid == form_data.countryid %}selected{% endif %}>{{ item.countryname }}</option>
+            <option value="{{ item['countryid'] }}" {% if item['countryid'] == form_data.countryid %}selected{% endif %}>{{ item['countryname'] }}</option>
             {% endfor %}
           </select>
           {% if field_errors.countryid %}
@@ -65,13 +65,13 @@
         <tbody>
           {% for row in district_rows %}
           <tr>
-            <td>{{ row.districtid }}</td>
-            <td>{{ row.districtname }}</td>
-            <td>{{ row.provincename }}</td>
-            <td>{{ row.countryname }}</td>
+            <td>{{ row['districtid'] }}</td>
+            <td>{{ row['districtname'] }}</td>
+            <td>{{ row['provincename'] }}</td>
+            <td>{{ row['countryname'] }}</td>
             <td class="text-end">
-              <a href="{{ url_for('mastersetup.edit_district', district_id=row.districtid) }}" class="btn btn-sm btn-outline-primary me-2">Edit</a>
-              <form method="POST" action="{{ url_for('mastersetup.delete_district', district_id=row.districtid) }}" class="d-inline">
+              <a href="{{ url_for('mastersetup.edit_district', district_id=row['districtid']) }}" class="btn btn-sm btn-outline-primary me-2">Edit</a>
+              <form method="POST" action="{{ url_for('mastersetup.delete_district', district_id=row['districtid']) }}" class="d-inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this district?');">Delete</button>
               </form>
