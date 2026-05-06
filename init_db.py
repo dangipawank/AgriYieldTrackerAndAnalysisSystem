@@ -1,6 +1,11 @@
 from sqlalchemy import text, select, insert
 
-from models import engine, metadata, users, season_master
+from models import (
+    engine,
+    metadata,
+    users,
+    season_master
+)
 from services.auth_service import (
     hash_password,
     ROLE_ADMIN,
@@ -10,18 +15,22 @@ from services.auth_service import (
 
 
 def init_database():
-    # Create the mastersetup schema first
+    # ✅ Step 1: Create schema (important for your master tables)
     with engine.begin() as conn:
         conn.execute(text("CREATE SCHEMA IF NOT EXISTS mastersetup"))
 
-    # Create all tables
+    # ✅ Step 2: Create all tables (including raw_yield_data)
     metadata.create_all(engine)
 
+    # ✅ Step 3: Alter existing tables safely (idempotent)
     alter_statements = [
+        # crop_master
         "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS created_by INTEGER NULL",
         "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS updated_by INTEGER NULL",
         "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()",
         "ALTER TABLE crop_master ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now()",
+
+        # yielddata
         "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS created_by INTEGER NULL",
         "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS updated_by INTEGER NULL",
         "ALTER TABLE yielddata ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()",
@@ -30,15 +39,19 @@ def init_database():
 
     with engine.begin() as conn:
 
+        # Apply alter statements
         for statement in alter_statements:
             conn.execute(text(statement))
 
+        # ✅ Step 4: Insert default seasons (if empty)
         season_count = conn.execute(select(season_master)).fetchall()
+
         if len(season_count) == 0:
             conn.execute(insert(season_master).values(seasonname="Spring"))
             conn.execute(insert(season_master).values(seasonname="Summer"))
             conn.execute(insert(season_master).values(seasonname="Winter"))
 
+        # ✅ Step 5: Insert default users (safe, no duplicates)
         default_users = [
             {"username": "admin", "email": "admin@agri.local", "password": "admin123", "role": ROLE_ADMIN},
             {"username": "officer", "email": "officer@agri.local", "password": "officer123", "role": ROLE_OFFICER},
@@ -63,7 +76,11 @@ def init_database():
                     )
                 )
 
-    print("Database initialized successfully. Default logins: admin/admin123, officer/officer123, farmer/farmer123")
+    print("✅ Database initialized successfully")
+    print("👉 Default logins:")
+    print("   admin / admin123")
+    print("   officer / officer123")
+    print("   farmer / farmer123")
 
 
 if __name__ == "__main__":

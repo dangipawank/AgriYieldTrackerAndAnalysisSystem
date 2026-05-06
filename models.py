@@ -1,10 +1,14 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, ForeignKey, DateTime, func
+from sqlalchemy import (
+    create_engine, MetaData, Table, Column,
+    Integer, String, Float, ForeignKey,
+    DateTime, func, Text   # ✅ added Text
+)
 from config import Config
 
 engine = create_engine(Config.DATABASE_URL)
-
 metadata = MetaData()
 
+# ---------------- MASTERSETUP SCHEMA ---------------- #
 
 country = Table(
     "country", metadata,
@@ -45,6 +49,7 @@ municipality = Table(
     schema="mastersetup"
 )
 
+# ---------------- USERS ---------------- #
 
 users = Table(
     "users", metadata,
@@ -56,6 +61,8 @@ users = Table(
     Column("created_at", DateTime, nullable=False, server_default=func.now()),
     Column("updated_at", DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
 )
+
+# ---------------- MASTER TABLES ---------------- #
 
 season_master = Table(
     "season_master", metadata,
@@ -80,6 +87,8 @@ crop_master = Table(
     Column("updated_at", DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
 )
 
+# ---------------- CLEAN TABLE (OLTP) ---------------- #
+
 yielddata = Table(
     "yielddata", metadata,
     Column("yieldid", Integer, primary_key=True),
@@ -97,6 +106,27 @@ yielddata = Table(
     Column("updated_at", DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
 )
 
+# ---------------- RAW TABLE (NEW - DATA ENGINEERING) ---------------- #
+
+raw_yield_data = Table(
+    "raw_yield_data", metadata,
+    Column("id", Integer, primary_key=True),
+    Column("farmer_id", Integer),
+
+    Column("crop_name", Text),
+    Column("district", Text),
+    Column("municipality", Text),
+    Column("season", Text),
+
+    Column("year", Text),
+    Column("area", Text),
+    Column("yield", Text),
+    Column("production", Text),
+
+    Column("created_at", DateTime, server_default=func.now())
+)
+
+# ---------------- VIEW ---------------- #
 
 yield_full_report = Table(
     "vw_yield_full_report", metadata,
@@ -118,4 +148,3 @@ yield_full_report = Table(
     Column("seasonid", Integer),
     Column("seasonname", String(50))
 )
-
